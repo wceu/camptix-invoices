@@ -17,21 +17,11 @@ define( 'CTX_INV_VER', time() );
  */
 require 'options-page.php';
 
-
-/**
- * Wait for camptix to load plugin
- */
-add_action( 'plugins_loaded', __NAMESPACE__ . '\load' );
-function load() {
-	if ( function_exists( 'camptix_register_addon' ) ) {
-		load_camptix_invoices();
-	}
-}
-
 /**
  * Load invoice addon
  */
-function load_camptix_invoices() {
+add_action( 'camptix_load_addons', __NAMESPACE__ . '\load' );
+function load() {
 	class CampTix_Addon_Invoices extends \CampTix_Addon {
 		function camptix_init() {
 			global $camptix;
