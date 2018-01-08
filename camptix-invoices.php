@@ -1,7 +1,5 @@
 <?php
 
-namespace CAMPTIX\INVOICES;
-
 /**
  * Plugin name: Camptix Invoices
  */
@@ -15,8 +13,8 @@ define( 'CTX_INV_VER', time() );
 /**
  * Load invoice addon
  */
-add_action( 'camptix_load_addons', __NAMESPACE__ . '\load' );
-function load() {
+add_action( 'camptix_load_addons', 'load_camptix_invoices' );
+function load_camptix_invoices() {
 	class CampTix_Addon_Invoices extends \CampTix_Addon {
 		/**
 		 * Init invoice addon
