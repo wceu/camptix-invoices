@@ -25,9 +25,6 @@ function load_camptix_invoices() {
 			add_action( 'camptix_menu_setup_controls', array( __CLASS__, 'invoice_settings' ) );
 			add_filter( 'camptix_validate_options', array( __CLASS__, 'validate_options' ), 10, 2 );
 			add_action( 'camptix_payment_result', array( __CLASS__, 'maybe_create_invoice' ), 10, 3 );
-			// add_filter( 'camptix_wp_mail_override', array( __CLASS__, 'maybe_attach_invoice' ) );
-			// add_filter( 'camptix_email_tickets_template', array( __CLASS__, 'maybe_attach_invoice' ), 10, 2 );
-			// add_action( 'camptix_init_email_templates_shortcodes', array( __CLASS__, 'init_invoice_shortcode' ) );
 		}
 
 		/**
@@ -91,15 +88,67 @@ function load_camptix_invoices() {
 			if ( 'email_template_pending_succeeded' !== $type ) {
 				return;
 			}
-			// global $camptix;
-			// $camptix->tmp( 'invoice_url', '<a href=""></a>' );
 		}
 
 		/**
-		 * Liste payment result to create invoice
+		 * Listen payment result to create invoice
 		 */
-		function maybe_create_invoice( $payment_token, $result, $data ) {
-			//
+		static function maybe_create_invoice( $payment_token, $result, $data ) {
+			if ( 2 !== $result ) {
+				return;
+			}
+
+			$attendees = get_posts( array(
+				'posts_per_page' => -1,
+				'post_type' => 'tix_attendee',
+				'post_status' => 'any',
+				'meta_query' => array(
+					array(
+						'key' => 'tix_payment_token',
+						'compare' => '=',
+						'value' => $payment_token,
+						'type' => 'CHAR',
+					),
+				),
+			) );
+			if ( ! $attendees ) {
+				return;
+			}
+			
+			$receipt_email = get_post_meta( $attendees[0]->ID, 'tix_receipt_email', true );
+			$order = get_post_meta( $attendees[0]->ID, 'tix_order', true );
+			CampTix_Addon_Invoices::create_invoice( $attendees[0], $order, $receipt_email );
+		}
+
+		/**
+		 * Get, increment and return invoice number
+		 * @todo can be refactorized
+		 */
+		static function create_invoice_number() {
+			$opt = get_option( 'camptix_options' );
+			$current = ! empty( $opt['invoice-current-number'] ) ? intval( $opt['invoice-current-number'] ) : 1;
+			$year = date( 'Y' );
+
+			if ( ! empty( $opt['invoice-new-year-reset'] ) ) {
+				if ( $opt['invoice-current-year'] != $year ) {
+					$opt['invoice-current-number'] = 1;
+					$current = 1;
+				}
+				$current = sprintf( '%s-%s', $year, $current );
+			}
+			
+			$opt['invoice-current-year'] = $year;
+			$opt['invoice-current-number']++;
+			update_option( 'camptix_options', $opt );
+			return $current;
+		}
+
+		/**
+		 * Create invoice
+		 * @todo Save invoice
+		 */
+		static function create_invoice( $attendee, $order, $receipt_email ) {
+			$number = CampTix_Addon_Invoices::create_invoice_number();
 		}
 	}
 	camptix_register_addon( 'CampTix_Addon_Invoices' );
