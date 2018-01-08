@@ -24,6 +24,10 @@ function load_camptix_invoices() {
 			add_filter( 'camptix_setup_sections', array( __CLASS__, 'invoice_settings_tab' ) );
 			add_action( 'camptix_menu_setup_controls', array( __CLASS__, 'invoice_settings' ) );
 			add_filter( 'camptix_validate_options', array( __CLASS__, 'validate_options' ), 10, 2 );
+			add_action( 'camptix_payment_result', array( __CLASS__, 'maybe_create_invoice' ), 10, 3 );
+			// add_filter( 'camptix_wp_mail_override', array( __CLASS__, 'maybe_attach_invoice' ) );
+			// add_filter( 'camptix_email_tickets_template', array( __CLASS__, 'maybe_attach_invoice' ), 10, 2 );
+			// add_action( 'camptix_init_email_templates_shortcodes', array( __CLASS__, 'init_invoice_shortcode' ) );
 		}
 
 		/**
@@ -78,6 +82,42 @@ function load_camptix_invoices() {
 			}
 			return $output;
 		}
+
+		/**
+		 * Attach invoice to email
+		 * @todo find another way, don't work
+		 */
+		function maybe_attach_invoice( $type, $attendee ) {
+			if ( 'email_template_pending_succeeded' !== $type ) {
+				return;
+			}
+			// global $camptix;
+			// $camptix->tmp( 'invoice_url', '<a href=""></a>' );
+		}
+
+		/**
+		 * Liste payment result to create invoice
+		 */
+		function maybe_create_invoice( $payment_token, $result, $data ) {
+			//
+		}
 	}
-	camptix_register_addon( __NAMESPACE__ . '\CampTix_Addon_Invoices' );
+	camptix_register_addon( 'CampTix_Addon_Invoices' );
+
+	add_action( 'init', 'register_tix_invoices' );
+}
+
+/**
+ * Register invoice CPT
+ */
+function register_tix_invoices() {
+	register_post_type( 'tix_invoices', array(
+		'label'        => __( 'Factures' ),
+		'labels' => array(
+			'name' => __( 'Factures' ),
+		),
+		'public'       => true,
+		'show_ui'      => true,
+		'show_in_menu' => 'edit.php?post_type=tix_ticket',
+	) );
 }
