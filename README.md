@@ -4,7 +4,7 @@ Camptix invoices est un plugin permettant de générer des factures automatiques
 
 ## À faire ##
 
-* Créer une sous page de réglage pour définir la numérotation de facture
+* ~Créer une sous page de réglage pour définir la numérotation de facture~
 * Lors de chaque commande, attacher une meta de numéro de facture autoincrémentée
 * Utiliser la méthode [https://blog.niap3d.com/fr/4,10,news-8-Creer-un-fichier-PDF-avec-PHP.html](https://blog.niap3d.com/fr/4,10,news-8-Creer-un-fichier-PDF-avec-PHP.html) pour générer une facture
 	- Sur un endpoint admin-post.php par exemple
