@@ -25,6 +25,7 @@ function load_camptix_invoices() {
 			add_action( 'camptix_menu_setup_controls', array( __CLASS__, 'invoice_settings' ) );
 			add_filter( 'camptix_validate_options', array( __CLASS__, 'validate_options' ), 10, 2 );
 			add_action( 'camptix_payment_result', array( __CLASS__, 'maybe_create_invoice' ), 10, 3 );
+			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		}
 
 		/**
@@ -149,6 +150,15 @@ function load_camptix_invoices() {
 		 */
 		static function create_invoice( $attendee, $order, $receipt_email ) {
 			$number = CampTix_Addon_Invoices::create_invoice_number();
+		}
+
+		/**
+		 * Enqueue assets
+		 * @todo enqueue only on [camptix] shortcode
+		 */
+		static function enqueue_assets() {
+			wp_register_script( 'camptix-invoices', plugins_url( 'camptix-invoices.js', __FILE__ ), array( 'jquery' ), true );
+			wp_enqueue_script( 'camptix-invoices' );
 		}
 	}
 	camptix_register_addon( 'CampTix_Addon_Invoices' );
