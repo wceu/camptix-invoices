@@ -32,6 +32,7 @@ function load_camptix_invoices() {
 			add_action( 'camptix_notices', array( __CLASS__, 'error_flag' ), 0 );
 			add_filter( 'camptix_form_register_complete_attendee_object', array( __CLASS__, 'attendee_object' ), 10, 2 );
 			add_action( 'camptix_checkout_update_post_meta', array( __CLASS__, 'add_meta_invoice_on_attendee' ), 10, 2 );
+			add_filter( 'camptix_metabox_attendee_info_additional_rows', array( __CLASS__, 'add_invoice_meta_on_attendee_metabox' ), 10, 2 );
 		}
 
 		/**
@@ -234,6 +235,21 @@ function load_camptix_invoices() {
 			if ( ! empty( $error_flags['fuck'] ) ) {
 				$camptix->error( 'Vous avez demandé une facture, il faut donc complèter les champs requis.' );
 			}
+		}
+
+		/**
+		 * Display invoice meta on attendee admin page
+		 */
+		static function add_invoice_meta_on_attendee_metabox( $rows, $post ) {
+			$invoice_meta = get_post_meta( $post->ID, 'invoice_metas', true );
+			$rows['A demandé une facture'] = __( 'Non' );
+			if ( ! empty( $invoice_meta ) ) {
+				$rows['A demandé une facture']      = __( 'Oui' );
+				$rows['Destinataire de la facture'] = $invoice_meta['name'];
+				$rows['Facture à envoyer à']        = $invoice_meta['email'];
+				$rows['Adresse du client']          = $invoice_meta['address'];
+			}
+			return $rows;
 		}
 	}
 	camptix_register_addon( 'CampTix_Addon_Invoices' );
