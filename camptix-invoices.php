@@ -30,6 +30,8 @@ function load_camptix_invoices() {
 			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 			add_filter( 'camptix_checkout_attendee_info', array( __CLASS__, 'attendee_info' ) );
 			add_action( 'camptix_notices', array( __CLASS__, 'error_flag' ), 0 );
+			add_filter( 'camptix_form_register_complete_attendee_object', array( __CLASS__, 'attendee_object' ), 10, 2 );
+			add_action( 'camptix_checkout_update_post_meta', array( __CLASS__, 'add_meta_invoice_on_attendee' ), 10, 2 );
 		}
 
 		/**
@@ -172,11 +174,49 @@ function load_camptix_invoices() {
 
 		/**
 		 * Attendee invoice information
+		 * (also check for missing invoice infos)
 		 */
 		static function attendee_info( $attendee_info ) {
 			global $camptix;
-			$camptix->error_flag( 'fuck' );
+			if ( ! empty( $_POST['camptix-need-invoice'] ) ) {
+				if ( empty( $_POST['invoice-email'] )
+				  || empty( $_POST['invoice-name'] )
+				  || empty( $_POST['invoice-address'] )
+				  || ! is_email( $_POST['invoice-email'] )
+				) {
+					$camptix->error_flag( 'fuck' );
+				} else {
+					$attendee_info['invoice-email'] = sanitize_email( $_POST['invoice-email'] );
+					$attendee_info['invoice-name'] = sanitize_text_field( $_POST['invoice-name'] );
+					$attendee_info['invoice-address'] = sanitize_text_field( $_POST['invoice-address'] );
+				}
+			}
 			return $attendee_info;
+		}
+
+		/**
+		 * Define custom attributes for an attendee object
+		 */
+		static function attendee_object( $attendee, $attendee_info ) {
+			if ( ! empty( $attendee_info['invoice-email'] ) ) {
+				$attendee->invoice = array(
+					'email'   => $attendee_info['invoice-email'],
+					'name'    => $attendee_info['invoice-name'],
+					'address' => $attendee_info['invoice-address'],
+				);
+			}
+			return $attendee;
+		}
+
+		/**
+		 * 
+		 */
+		static function add_meta_invoice_on_attendee( $post_id, $attendee ) {
+			if ( ! empty( $attendee->invoice ) ) {
+				update_post_meta( $post_id, 'invoice_metas', $attendee->invoice );
+				global $camptix;
+				$camptix->log( __( 'Le participant a demandé une facture.'), $post_id, $attendee->invoice );
+			}
 		}
 
 		/**
