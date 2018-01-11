@@ -89,16 +89,6 @@ function load_camptix_invoices() {
 		}
 
 		/**
-		 * Attach invoice to email
-		 * @todo find another way, don't work
-		 */
-		function maybe_attach_invoice( $type, $attendee ) {
-			if ( 'email_template_pending_succeeded' !== $type ) {
-				return;
-			}
-		}
-
-		/**
 		 * Listen payment result to create invoice
 		 */
 		static function maybe_create_invoice( $payment_token, $result, $data ) {
@@ -223,7 +213,7 @@ function load_camptix_invoices() {
 		}
 
 		/**
-		 * 
+		 * Add Invoice meta on an attendee post
 		 */
 		static function add_meta_invoice_on_attendee( $post_id, $attendee ) {
 			if ( ! empty( $attendee->invoice ) ) {
