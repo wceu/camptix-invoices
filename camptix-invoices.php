@@ -160,7 +160,7 @@ function load_camptix_invoices() {
 			$arr = array(
 				'post_type'   => 'tix_invoice',
 				'post_status' => 'publish',
-				'post_title'  => sprintf( __( 'Facture n° la commande %s du %s' ), $number, get_post_meta( $attendee->ID, 'tix_transaction_id', true ), get_the_time( 'd/m/Y', $attendee ) ),
+				'post_title'  => sprintf( __( 'Facture n°%1$s la commande %2$s du %3$s' ), $number, get_post_meta( $attendee->ID, 'tix_transaction_id', true ), get_the_time( 'd/m/Y', $attendee ) ),
 			);
 			$invoice = wp_insert_post( $arr );
 			if ( ! $invoice || is_wp_error( $invoice ) ) {
