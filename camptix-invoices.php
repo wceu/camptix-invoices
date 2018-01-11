@@ -55,7 +55,7 @@ function load_camptix_invoices() {
 			$camptix->add_settings_field_helper( 'invoice-new-year-reset', 'Réinitialisation annuelle', 'field_yesno' ,'invoice', 
 				sprintf( __( 'Les numéros de facture sont préfixés par l’année, et seront réinitialisés le premier janvier. (ex: %1$s-125)' ), date( 'Y' ) )
 			);
-			add_settings_field( 'invoice-current-number', 'Prochaine facture', array( __CLASS__, 'current_number' ), 'camptix_options', 'invoice', array(
+			add_settings_field( 'invoice-current-number', 'Prochaine facture', array( __CLASS__, 'current_number_callback' ), 'camptix_options', 'invoice', array(
 				'id'    => 'invoice-current-number',
 				'value' => isset( $opt['invoice-current-number'] ) ? $opt['invoice-current-number'] : 1,
 				'yearly' => isset( $opt['invoice-new-year-reset'] ) ? $opt['invoice-new-year-reset'] : false
