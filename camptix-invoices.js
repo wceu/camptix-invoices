@@ -2,7 +2,7 @@ jQuery(document).ready(function ($) {
     /**
      * Compose a form to receive client information
      */
-    var $afterMarker = $('.tix_tickets_table.tix-attendee-form');
+    var $afterMarker = $('.tix-has-dynamic-receipts .tix_tickets_table.tix-attendee-form');
     if ($afterMarker.length) {
         $.ajax({
             url: camptixInvoicesVars.invoiceDetailsForm,
