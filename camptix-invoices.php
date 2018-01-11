@@ -153,7 +153,7 @@ function load_camptix_invoices() {
 
 		/**
 		 * Create invoice
-		 * @todo Save invoice
+		 * @todo Faire une liaison entre la facture et les participants
 		 */
 		static function create_invoice( $attendee, $order, $metas ) {
 			$number = CampTix_Addon_Invoices::create_invoice_number();
@@ -161,6 +161,7 @@ function load_camptix_invoices() {
 				'post_type'   => 'tix_invoice',
 				'post_status' => 'publish',
 				'post_title'  => sprintf( __( 'Facture n°%1$s la commande %2$s du %3$s' ), $number, get_post_meta( $attendee->ID, 'tix_transaction_id', true ), get_the_time( 'd/m/Y', $attendee ) ),
+				'post_name'   => sprintf( 'invoice-%s', $number ),
 			);
 			$invoice = wp_insert_post( $arr );
 			if ( ! $invoice || is_wp_error( $invoice ) ) {
