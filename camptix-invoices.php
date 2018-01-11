@@ -21,11 +21,15 @@ function load_camptix_invoices() {
 		 */
 		function camptix_init() {
 			global $camptix;
+			global $camptix_invoice_custom_error;
+			$camptix_invoice_custom_error = false;
 			add_filter( 'camptix_setup_sections', array( __CLASS__, 'invoice_settings_tab' ) );
 			add_action( 'camptix_menu_setup_controls', array( __CLASS__, 'invoice_settings' ) );
 			add_filter( 'camptix_validate_options', array( __CLASS__, 'validate_options' ), 10, 2 );
 			add_action( 'camptix_payment_result', array( __CLASS__, 'maybe_create_invoice' ), 10, 3 );
 			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+			add_filter( 'camptix_checkout_attendee_info', array( __CLASS__, 'attendee_info' ) );
+			add_action( 'camptix_notices', array( __CLASS__, 'error_flag' ), 0 );
 		}
 
 		/**
@@ -165,6 +169,32 @@ function load_camptix_invoices() {
 			wp_register_style( 'camptix-invoices-css', plugins_url( 'camptix-invoices.css', __FILE__ ) );
 			wp_enqueue_style( 'camptix-invoices-css' );
 		}
+
+		/**
+		 * Attendee invoice information
+		 */
+		static function attendee_info( $attendee_info ) {
+			global $camptix;
+			$camptix->error_flag( 'fuck' );
+			return $attendee_info;
+		}
+
+		/**
+		 * My custom errors flags
+		 */
+		static function error_flag() {
+			
+			global $camptix;
+			/**
+			 * Hack
+			 */
+			$rp = new ReflectionProperty( 'CampTix_Plugin', 'error_flags' );
+			$rp->setAccessible( true );
+			$error_flags = $rp->getValue( $camptix );
+			if ( ! empty( $error_flags['fuck'] ) ) {
+				$camptix->error( 'Vous avez demandé une facture, il faut donc complèter les champs requis.' );
+			}
+		}
 	}
 	camptix_register_addon( 'CampTix_Addon_Invoices' );
 
@@ -205,6 +235,7 @@ function camptix_invoice_form() {
 		<td class="tix-right"><input type="text" name="invoice-name" id="invoice-name"></td>';
 	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-address">' . __( 'Adresse de facturation' ) . '</label></td>
 		<td class="tix-right"><textarea name="invoice-address" id="invoice-address" rows="2"></textarea></td>';
+	$fields = apply_filters( 'camptix-invoices/invoice-details-form-fields', $fields );
 	$fields_formatted = $fields['main'] . '<table class="camptix-invoice-details tix_tickets_table tix_invoice_table"><tbody><tr>' . implode( '</tr><tr>', $fields[ 'hidden'] ) . '</tr></tbody></table>';
 	$form = apply_filters( 'camptix-invoice/invoice-details-form', '<div style="margin-bottom:2rem;">' . $fields_formatted . '</div>', $fields );
 	wp_send_json( array( 'form' => $form ) );
