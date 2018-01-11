@@ -122,10 +122,10 @@ function load_camptix_invoices() {
 			if ( ! $attendees ) {
 				return;
 			}
-			
-			$receipt_email = get_post_meta( $attendees[0]->ID, 'tix_receipt_email', true );
-			$order = get_post_meta( $attendees[0]->ID, 'tix_order', true );
-			CampTix_Addon_Invoices::create_invoice( $attendees[0], $order, $receipt_email );
+			if ( $metas = get_post_meta( $attendees[0]->ID, 'invoice_metas', true ) ) {
+				$order = get_post_meta( $attendees[0]->ID, 'tix_order', true );
+				CampTix_Addon_Invoices::create_invoice( $attendees[0], $order, $metas );
+			}
 		}
 
 		/**
@@ -155,8 +155,20 @@ function load_camptix_invoices() {
 		 * Create invoice
 		 * @todo Save invoice
 		 */
-		static function create_invoice( $attendee, $order, $receipt_email ) {
+		static function create_invoice( $attendee, $order, $metas ) {
 			$number = CampTix_Addon_Invoices::create_invoice_number();
+			$arr = array(
+				'post_type'   => 'tix_invoice',
+				'post_status' => 'publish',
+				'post_title'  => sprintf( __( 'Facture n° la commande %s du %s' ), $number, get_post_meta( $attendee->ID, 'tix_transaction_id', true ), get_the_time( 'd/m/Y', $attendee ) ),
+			);
+			$invoice = wp_insert_post( $arr );
+			if ( ! $invoice || is_wp_error( $invoice ) ) {
+				return;
+			}
+			update_post_meta( $invoice, 'invoice_number', $number );
+			update_post_meta( $invoice, 'invoice_metas', $metas );
+			update_post_meta( $invoice, 'original_order', $order );
 		}
 
 		/**
