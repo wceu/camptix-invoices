@@ -267,14 +267,14 @@ function load_camptix_invoices() {
 	}
 	camptix_register_addon( 'CampTix_Addon_Invoices' );
 
-	add_action( 'init', 'register_tix_invoices' );
+	add_action( 'init', 'register_tix_invoice' );
 }
 
 /**
  * Register invoice CPT
  */
-function register_tix_invoices() {
-	register_post_type( 'tix_invoices', array(
+function register_tix_invoice() {
+	register_post_type( 'tix_invoice', array(
 		'label'        => __( 'Factures' ),
 		'labels' => array(
 			'name' => __( 'Factures' ),
