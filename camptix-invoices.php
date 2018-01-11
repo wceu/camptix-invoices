@@ -242,12 +242,13 @@ function load_camptix_invoices() {
 		 */
 		static function add_invoice_meta_on_attendee_metabox( $rows, $post ) {
 			$invoice_meta = get_post_meta( $post->ID, 'invoice_metas', true );
-			$rows['A demandé une facture'] = __( 'Non' );
 			if ( ! empty( $invoice_meta ) ) {
-				$rows['A demandé une facture']      = __( 'Oui' );
-				$rows['Destinataire de la facture'] = $invoice_meta['name'];
-				$rows['Facture à envoyer à']        = $invoice_meta['email'];
-				$rows['Adresse du client']          = $invoice_meta['address'];
+				$rows[] = array( __( 'A demandé une facture' ), __( 'Oui' ) );
+				$rows[] = array( __( 'Destinataire de la facture' ), $invoice_meta['name'] );
+				$rows[] = array( __( 'Facture à envoyer à' ), $invoice_meta['email'] );
+				$rows[] = array( __( 'Adresse du client' ), $invoice_meta['address'] );
+			} else {
+				$rows[] = array( __( 'A demandé une facture' ), __( 'Non' ) );				
 			}
 			return $rows;
 		}
