@@ -288,15 +288,15 @@ add_action( 'rest_api_init', function () {
 
 function camptix_invoice_form() {
 	$fields = array();
-	$fields['main' ]  = '<input type="checkbox" value="1" name="camptix-need-invoice" id="camptix-need-invoice"/> <label for="camptix-need-invoice">' . __( 'Je souhaite une facture' ) . '</label>';
-	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-email">' . __( 'Email pour recevoir la facture' ) . '</label></td>
+	$fields['main' ]  = '<input type="checkbox" value="1" name="camptix-need-invoice" id="camptix-need-invoice"/> <label for="camptix-need-invoice">' . __( 'J’ai besoin d’une facture' ) . '</label>';
+	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-email">' . __( 'Email pour recevoir la facture' ) . ' <span class="tix-required-star">*</span></label></td>
 		<td class="tix-right"><input type="text" name="invoice-email" id="invoice-email" pattern="^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+.[a-zA-Z0-9-.]+$"></td>';
-	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-name">' . __( 'Nom de facturation' ) . '</label></td>
+	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-name">' . __( 'Nom de facturation' ) . ' <span class="tix-required-star">*</span></label></td>
 		<td class="tix-right"><input type="text" name="invoice-name" id="invoice-name"></td>';
-	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-address">' . __( 'Adresse de facturation' ) . '</label></td>
+	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-address">' . __( 'Adresse de facturation' ) . ' <span class="tix-required-star">*</span></label></td>
 		<td class="tix-right"><textarea name="invoice-address" id="invoice-address" rows="2"></textarea></td>';
 	$fields = apply_filters( 'camptix-invoices/invoice-details-form-fields', $fields );
 	$fields_formatted = $fields['main'] . '<table class="camptix-invoice-details tix_tickets_table tix_invoice_table"><tbody><tr>' . implode( '</tr><tr>', $fields[ 'hidden'] ) . '</tr></tbody></table>';
-	$form = apply_filters( 'camptix-invoice/invoice-details-form', '<div style="margin-bottom:2rem;">' . $fields_formatted . '</div>', $fields );
+	$form = apply_filters( 'camptix-invoice/invoice-details-form', '<div class="camptix-invoice-toggle-wrapper">' . $fields_formatted . '</div>', $fields );
 	wp_send_json( array( 'form' => $form ) );
 }
