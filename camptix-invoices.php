@@ -61,6 +61,12 @@ function load_camptix_invoices() {
 				'value' => isset( $opt['invoice-current-number'] ) ? $opt['invoice-current-number'] : 1,
 				'yearly' => isset( $opt['invoice-new-year-reset'] ) ? $opt['invoice-new-year-reset'] : false
 			) );
+			add_settings_field( 'invoice-logo', __( 'Logo' ), array( __CLASS__, 'type_file_callback' ), 'camptix_options', 'invoice', array(
+				'id'    => 'invoice-logo'
+			) );
+			$camptix->add_settings_field_helper( 'invoice-company', __( 'Adresse de l\'organisme' ), 'field_textarea' ,'invoice');
+			$camptix->add_settings_field_helper( 'invoice-cgv', __( 'CGV' ), 'field_textarea' ,'invoice');
+			$camptix->add_settings_field_helper( 'invoice-thankyou', __( 'Mot en dessous du total' ), 'field_textarea' ,'invoice');
 		}
 
 		/**
@@ -76,6 +82,16 @@ function load_camptix_invoices() {
 		}
 
 		/**
+		 * Input type file
+		 */
+		static function type_file_callback( $args ) {
+			vprintf( '<input type="file" value="" name="camptix_options[%1$s]">', array(
+				esc_attr( $args['id'] ),
+				esc_attr( $args['value'] ),
+			) );
+		}
+
+		/**
 		 * Validate our custom options
 		 */
 		static function validate_options( $output, $input ) {
@@ -84,6 +100,15 @@ function load_camptix_invoices() {
 			}
 			if ( ! empty( $input['invoice-current-number'] ) ) {
 				$output['invoice-current-number'] = (int) $input['invoice-current-number'];
+			}
+			if ( ! empty( $input['invoice-company'] ) ) {
+				$output['invoice-company'] = $input['invoice-company'];
+			}
+			if ( ! empty( $input['invoice-cgv'] ) ) {
+				$output['invoice-cgv'] = $input['invoice-cgv'];
+			}
+			if ( ! empty( $input['invoice-thankyou'] ) ) {
+				$output['invoice-thankyou'] = $input['invoice-thankyou'];
 			}
 			return $output;
 		}
