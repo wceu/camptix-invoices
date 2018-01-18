@@ -193,6 +193,10 @@ function load_camptix_invoices() {
 		 */
 		static function create_invoice( $attendee, $order, $metas ) {
 			$number = CampTix_Addon_Invoices::create_invoice_number();
+
+			// Prevent assign invoice_number twice
+			remove_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10 );
+
 			$arr = array(
 				'post_type'   => 'tix_invoice',
 				'post_status' => 'publish',
@@ -339,22 +343,36 @@ function ctx_invoice_link( $post ) {
 	if ( 'tix_invoice' !== $post->post_type || $post->post_status !== 'publish' ) {
 		return false;
 	}
+	$invoice_number = get_post_meta( $post->ID, 'invoice_number', true );
 	$auth = get_post_meta( $post->ID, 'auth', true );
-	vprintf( '<div class="misc-pub-section"><a href="%s" class="button button-secondary" target="_blank">%2$s</a></div>',
+	vprintf( '<div class="misc-pub-section"><p>%3$s <strong>%4$s</strong></p><a href="%s" class="button button-secondary" target="_blank">%2$s</a></div>',
 		array(
 			admin_url( 'admin-post.php?action=camptix-invoice.get&invoice_id=' . $post->ID . '&invoice_auth=' . $auth ),
-			__( 'Imprimer la facture' ),
+			esc_html__( 'Imprimer la facture' ),
+			esc_html__( 'Numero de facture :' ),
+			esc_attr( $invoice_number ),
 		) );
 }
 
+/**
+ * Register metabox on invoices
+ */
 add_action( 'add_meta_boxes_tix_invoice', 'ctx_register_invoice_metabox' );
-function ctx_register_invoice_metabox() {
-	add_meta_box( 'ctx_invoice_metabox', 'Informations', 'ctx_invoice_metabox_editable', 'tix_invoice', 'normal', 'high' );
+function ctx_register_invoice_metabox( $post ) {
+	if ( 'publish' === $post->post_status ) {
+		add_meta_box( 'ctx_invoice_metabox', 'Informations', 'ctx_invoice_metabox_sent', 'tix_invoice', 'normal', 'high' );
+	} else {
+		add_meta_box( 'ctx_invoice_metabox', 'Informations', 'ctx_invoice_metabox_editable', 'tix_invoice', 'normal', 'high' );
+	}
 }
 
+/**
+ * Metabox for edible invoice (not published)
+ */
 function ctx_invoice_metabox_editable( $args ) {
 	$order = get_post_meta( $args->ID, 'original_order', true );
-	var_dump( $order );
+	$metas = get_post_meta( $args->ID, 'invoice_metas', true );
+	wp_nonce_field( 'edit-invoice-' . get_current_user_id() . '-' . $args->ID, 'edit-invoice' );
 	echo '<h3>' . esc_html__( 'Détail de la commande' ) . '</h3>';
 	$item_line = '<tr>
 		<td><input type="text" value="%2$s" name="order[items][%1$d][name]" class="widefat"></td><!-- name -->
@@ -385,14 +403,126 @@ function ctx_invoice_metabox_editable( $args ) {
 		'',
 		) );
 	echo '</tbody></table>';
-	printf( '<table class="form-table"><tr><th scope="row"><label for="order[total]">%1$s</label></th>
+	vprintf( '<table class="form-table">
+		<tr><th scope="row"><label for="order[total]">%1$s</label></th>
 		<td><input
 		type="number"
 		min="0"
 		value="%2$.2f"
 		name="order[total]"
-		id="order[total]"/></td></tr></table>', __( 'Montant total' ), $order['total'] );
+		id="order[total]"/></td></tr>
+		<tr><th scope="row"><label for="invoice_metas[name]">%3$s</label></th>
+		<td><input name="invoice_metas[name]" id="invoice_metas[name]" value="%4$s" type="texte" class="widefat"/><td></tr>
+		<tr><th scope="row"><label for="invoice_metas[email]">%5$s</label></th>
+		<td><input name="invoice_metas[email]" id="invoice_metas[email]" value="%6$s" type="email" class="widefat"/><td></tr>
+		<tr><th scope="row"><label for="invoice_metas[address]">%7$s</label></th>
+		<td><textarea name="invoice_metas[name]" id="invoice_metas[name]" class="widefat">%8$s</textarea><td></tr>
+		</table>', array( 
+			esc_html__( 'Montant total' ),
+			esc_attr( $order['total'] ),
+			esc_html__( 'Client' ),
+			esc_attr( $metas['name'] ),
+			esc_html__( 'Email de contact' ),
+			esc_attr( $metas['email'] ),
+			esc_html__( 'Adresse du client' ),
+			esc_textarea( $metas['address'] ),
+		) );
+}
 
+/**
+ * Metabox for published invoices
+ */
+function ctx_invoice_metabox_sent( $args ) {
+	$order = get_post_meta( $args->ID, 'original_order', true );
+	$metas = get_post_meta( $args->ID, 'invoice_metas', true );
+	echo '<h3>' . esc_html__( 'Détail de la commande' ) . '</h3>';
+	$item_line = '<tr>
+		<td>%1$s</td><!-- name -->
+		<td>%2$.2f</td><!-- price -->
+		<td>%3$s</td><!-- qty -->
+		</tr>';
+	vprintf( '<table class="widefat"><thead><tr>
+		<th>%1$s</th>
+		<th>%2$s</th>
+		<th>%3$s</th>
+		</tr></thead><tbody>', array(
+			__( 'Titre' ),
+			__( 'Prix unitaire' ),
+			__( 'Quantité' ),
+	) );
+	foreach ( $order['items'] as $k => $item ) {
+		vprintf( $item_line, array(
+			$item['name'],
+			$item['price'],
+			$item['quantity'],
+			) );
+	}
+	echo '</tbody></table>';
+	vprintf( '<table class="form-table"><tr><th scope="row">%1$s</th>
+		<td>%2$.2f</td></tr>
+		<tr><th scope="row">%3$s</th>
+		<td>%4$s<td></tr>
+		<tr><th scope="row">%5$s</th>
+		<td>%6$s<td></tr>
+		<tr><th scope="row">%7$s</th>
+		<td>%8$s<td></tr>
+		</table>', array(
+			esc_html__( 'Montant total' ),
+			esc_html( $order['total'] ),
+			esc_html__( 'Client' ),
+			esc_html( $metas['name'] ),
+			esc_html__( 'Email de contact' ),
+			esc_html( $metas['email'] ),
+			esc_html__( 'Adresse du client' ),
+			wp_kses( nl2br( $metas['address'] ), array( 'br' => true ) ),
+		) );
+}
+
+/**
+ * Save invoice metabox
+ */
+add_action( 'save_post_tix_invoice', 'ctx_save_invoice_details', 10, 2 );
+function ctx_save_invoice_details( $post_id, $post ) {
+	if ( ! isset( $_POST['edit-invoice'] ) ) {
+		return;
+	}
+	check_admin_referer( 'edit-invoice-' . $_POST['user_ID'] . '-' . $_POST['post_ID'], 'edit-invoice' );
+	// Filter items to save
+	$order = $_POST['order'];
+	$items = array();
+	foreach ( $order['items'] as $item ) {
+		if ( ! empty( $items['name'] ) && ! empty( $items['quantity'] ) ) {
+			$items[] = $item;
+		}
+	}
+	$order['items'] = $items;
+	update_post_meta( $post_id, 'original_order', $order );
+	update_post_meta( $post_id, 'invoice_metas', $_POST['invoice_metas'] );
+}
+
+/**
+ * Assign invoice number on status transitions to PUBLISH
+ */
+add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
+function ctx_assign_invoice_number( $id, $post ) {
+	if ( ! get_post_meta( $id, 'invoice_number', true ) ) {
+		$number = CampTix_Addon_Invoices::create_invoice_number();
+		update_post_meta( $id, 'invoice_number', $number );
+	}
+}
+
+/**
+ * Disallow an invoice to be edit after publish
+ */
+add_action( 'transition_post_status', 'ctx_dissallow_invoice_edit', 10, 3 );
+function ctx_dissallow_invoice_edit( $new_status, $old_status, $post ) {
+	if ( 'tix_invoice' !== $post->post_type ) {
+		return;
+	}
+
+    if ( $old_status === 'publish' && $new_status !== 'publish' ) {
+		wp_die( __( 'Il n’est pas possible de modifier une facture déjà publiée.' ) );
+	}
 }
 
 /**
