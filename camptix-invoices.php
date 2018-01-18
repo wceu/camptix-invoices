@@ -421,7 +421,7 @@ function ctx_invoice_metabox_editable( $args ) {
 		<tr><th scope="row"><label for="invoice_metas[email]">%5$s</label></th>
 		<td><input name="invoice_metas[email]" id="invoice_metas[email]" value="%6$s" type="email" class="widefat"/><td></tr>
 		<tr><th scope="row"><label for="invoice_metas[address]">%7$s</label></th>
-		<td><textarea name="invoice_metas[name]" id="invoice_metas[name]" class="widefat">%8$s</textarea><td></tr>
+		<td><textarea name="invoice_metas[address]" id="invoice_metas[address]" class="widefat">%8$s</textarea><td></tr>
 		</table>', array( 
 			esc_html__( 'Montant total', 'camptix-invoices' ),
 			esc_attr( $order['total'] ),
@@ -496,7 +496,7 @@ function ctx_save_invoice_details( $post_id, $post ) {
 	$order = $_POST['order'];
 	$items = array();
 	foreach ( $order['items'] as $item ) {
-		if ( ! empty( $items['name'] ) && ! empty( $items['quantity'] ) ) {
+		if ( ! empty( $item['name'] ) && ! empty( $item['quantity'] ) ) {
 			$items[] = $item;
 		}
 	}
