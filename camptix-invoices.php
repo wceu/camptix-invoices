@@ -96,19 +96,19 @@ function load_camptix_invoices() {
 		 */
 		static function validate_options( $output, $input ) {
 			if ( isset( $input['invoice-new-year-reset'] ) ) {
-				$output['invoice-new-year-reset'] = intval( $input['invoice-new-year-reset'] );
+				$output['invoice-new-year-reset'] = (int) $input['invoice-new-year-reset'];
 			}
 			if ( ! empty( $input['invoice-current-number'] ) ) {
 				$output['invoice-current-number'] = (int) $input['invoice-current-number'];
 			}
 			if ( ! empty( $input['invoice-company'] ) ) {
-				$output['invoice-company'] = $input['invoice-company'];
+				$output['invoice-company'] = sanitize_text_field( $input['invoice-company'] );
 			}
 			if ( ! empty( $input['invoice-cgv'] ) ) {
-				$output['invoice-cgv'] = $input['invoice-cgv'];
+				$output['invoice-cgv'] = sanitize_textarea_field( $input['invoice-cgv'] );
 			}
 			if ( ! empty( $input['invoice-thankyou'] ) ) {
-				$output['invoice-thankyou'] = $input['invoice-thankyou'];
+				$output['invoice-thankyou'] = sanitize_textarea_field( $input['invoice-thankyou'] );
 			}
 			return $output;
 		}
@@ -217,7 +217,7 @@ function load_camptix_invoices() {
 				} else {
 					$attendee_info['invoice-email'] = sanitize_email( $_POST['invoice-email'] );
 					$attendee_info['invoice-name'] = sanitize_text_field( $_POST['invoice-name'] );
-					$attendee_info['invoice-address'] = sanitize_text_field( $_POST['invoice-address'] );
+					$attendee_info['invoice-address'] = sanitize_textarea_field( $_POST['invoice-address'] );
 				}
 			}
 			return $attendee_info;
