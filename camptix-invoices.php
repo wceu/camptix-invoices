@@ -28,6 +28,7 @@ function load_camptix_invoices() {
 			add_filter( 'camptix_validate_options', array( __CLASS__, 'validate_options' ), 10, 2 );
 			add_action( 'camptix_payment_result', array( __CLASS__, 'maybe_create_invoice' ), 10, 3 );
 			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_enqueue_assets' ) );
 			add_filter( 'camptix_checkout_attendee_info', array( __CLASS__, 'attendee_info' ) );
 			add_action( 'camptix_notices', array( __CLASS__, 'error_flag' ), 0 );
 			add_filter( 'camptix_form_register_complete_attendee_object', array( __CLASS__, 'attendee_object' ), 10, 2 );
@@ -62,9 +63,10 @@ function load_camptix_invoices() {
 				'yearly' => isset( $opt['invoice-new-year-reset'] ) ? $opt['invoice-new-year-reset'] : false
 			) );
 			add_settings_field( 'invoice-logo', __( 'Logo' ), array( __CLASS__, 'type_file_callback' ), 'camptix_options', 'invoice', array(
-				'id'    => 'invoice-logo'
+				'id'    => 'invoice-logo',
+				'value' => ! empty( $opt['invoice-logo'] ) ? $opt['invoice-logo'] : '',
 			) );
-			$camptix->add_settings_field_helper( 'invoice-company', __( 'Adresse de l\'organisme' ), 'field_textarea' ,'invoice');
+			$camptix->add_settings_field_helper( 'invoice-company', __( 'Adresse de l’organisme' ), 'field_textarea' ,'invoice');
 			$camptix->add_settings_field_helper( 'invoice-cgv', __( 'CGV' ), 'field_textarea' ,'invoice');
 			$camptix->add_settings_field_helper( 'invoice-thankyou', __( 'Mot en dessous du total' ), 'field_textarea' ,'invoice');
 		}
@@ -85,9 +87,25 @@ function load_camptix_invoices() {
 		 * Input type file
 		 */
 		static function type_file_callback( $args ) {
-			vprintf( '<input type="file" value="" name="camptix_options[%1$s]">', array(
+			wp_enqueue_media();
+			wp_enqueue_script( 'admin-camptix-invoices' );
+			wp_localize_script( 'admin-camptix-invoices', 'camptixInvoiceBackVars', array(
+				'selectText'  => __( 'Sélectionner un logo a télécharger' ),
+				'selectImage' => __( 'Choisir ce logo' ),
+			) );
+
+			vprintf( '<div class="camptix-media"><div class="camptix-invoice-logo-preview-wrapper" data-imagewrapper>
+				%4$s
+			</div>
+			<input data-set type="button" class="button button-secondary" value="%3$s" />
+			<input data-unset type="button" class="button button-secondary" value="%5$s"%6$s/>
+			<input type="hidden" name=camptix_options[%1$s] data-field="image_attachment" value="%2$s"></div>', array(
 				esc_attr( $args['id'] ),
 				esc_attr( $args['value'] ),
+				esc_attr__( 'Choisir un logo' ),
+				! empty( $args['value'] ) ? wp_get_attachment_image( $args['value'], 'thumbnail', '', array() ) : '',
+				esc_attr__( 'Retirer le logo' ),
+				empty( $args['value'] ) ? ' style="display:none;"' : '',
 			) );
 		}
 
@@ -101,13 +119,16 @@ function load_camptix_invoices() {
 			if ( ! empty( $input['invoice-current-number'] ) ) {
 				$output['invoice-current-number'] = (int) $input['invoice-current-number'];
 			}
-			if ( ! empty( $input['invoice-company'] ) ) {
+			if ( isset( $input['invoice-logo'] ) ) {
+				$output['invoice-logo'] = (int) $input['invoice-logo'];
+			}
+			if ( isset( $input['invoice-company'] ) ) {
 				$output['invoice-company'] = sanitize_text_field( $input['invoice-company'] );
 			}
-			if ( ! empty( $input['invoice-cgv'] ) ) {
+			if ( isset( $input['invoice-cgv'] ) ) {
 				$output['invoice-cgv'] = sanitize_textarea_field( $input['invoice-cgv'] );
 			}
-			if ( ! empty( $input['invoice-thankyou'] ) ) {
+			if ( isset( $input['invoice-thankyou'] ) ) {
 				$output['invoice-thankyou'] = sanitize_textarea_field( $input['invoice-thankyou'] );
 			}
 			return $output;
@@ -199,6 +220,13 @@ function load_camptix_invoices() {
 			) );
 			wp_register_style( 'camptix-invoices-css', plugins_url( 'camptix-invoices.css', __FILE__ ) );
 			wp_enqueue_style( 'camptix-invoices-css' );
+		}
+
+		/**
+		 * Register assets on admin side
+		 */
+		static function admin_enqueue_assets() {
+			wp_register_script( 'admin-camptix-invoices', plugins_url( 'camptix-invoices-back.js', __FILE__ ), array( 'jquery' ), true );
 		}
 
 		/**
