@@ -336,7 +336,7 @@ function register_tix_invoice() {
  */
 add_action( 'post_submitbox_misc_actions', 'ctx_invoice_link' );
 function ctx_invoice_link( $post ) {
-	if ( 'tix_invoice' !== $post->post_type ) {
+	if ( 'tix_invoice' !== $post->post_type || $post->post_status !== 'publish' ) {
 		return false;
 	}
 	$auth = get_post_meta( $post->ID, 'auth', true );
@@ -345,6 +345,54 @@ function ctx_invoice_link( $post ) {
 			admin_url( 'admin-post.php?action=camptix-invoice.get&invoice_id=' . $post->ID . '&invoice_auth=' . $auth ),
 			__( 'Imprimer la facture' ),
 		) );
+}
+
+add_action( 'add_meta_boxes_tix_invoice', 'ctx_register_invoice_metabox' );
+function ctx_register_invoice_metabox() {
+	add_meta_box( 'ctx_invoice_metabox', 'Informations', 'ctx_invoice_metabox_editable', 'tix_invoice', 'normal', 'high' );
+}
+
+function ctx_invoice_metabox_editable( $args ) {
+	$order = get_post_meta( $args->ID, 'original_order', true );
+	var_dump( $order );
+	echo '<h3>' . esc_html__( 'Détail de la commande' ) . '</h3>';
+	$item_line = '<tr>
+		<td><input type="text" value="%2$s" name="order[items][%1$d][name]" class="widefat"></td><!-- name -->
+		<td><input type="number" min="0" value="%3$.2f" name="order[items][%1$d][price]" class="widefat"></td><!-- price -->
+		<td><input type="number" min="0" value="%4$s" name="order[items][%1$d][quantity]" class="widefat"></td><!-- qty -->
+		</tr>';
+	vprintf( '<table class="widefat"><thead><tr>
+		<th>%1$s</th>
+		<th>%2$s</th>
+		<th>%3$s</th>
+		</tr></thead><tbody>', array(
+			__( 'Titre' ),
+			__( 'Prix unitaire' ),
+			__( 'Quantité' ),
+	) );
+	foreach ( $order['items'] as $k => $item ) {
+		vprintf( $item_line, array(
+			$k,
+			$item['name'],
+			$item['price'],
+			$item['quantity'],
+			) );
+	}
+	vprintf( $item_line, array(
+		count( $order['items'] ) + 1,
+		'',
+		'',
+		'',
+		) );
+	echo '</tbody></table>';
+	printf( '<table class="form-table"><tr><th scope="row"><label for="order[total]">%1$s</label></th>
+		<td><input
+		type="number"
+		min="0"
+		value="%2$.2f"
+		name="order[total]"
+		id="order[total]"/></td></tr></table>', __( 'Montant total' ), $order['total'] );
+
 }
 
 /**
@@ -380,10 +428,10 @@ add_action( 'admin_post_nopriv_camptix-invoice.get', 'ctx_get_invoice' );
 add_action( 'admin_post_camptix-invoice.get', 'ctx_get_invoice' );
 function ctx_get_invoice() {
 	if ( ! $invoice = ctx_can_get_invoice() ) {
-		die();
+		wp_die( __( 'Vous ne pouvez pas accéder à cette facture' ) );
 	}
 	// Do stuff here @simon
-	var_dump( get_post_meta( $invoice, 'original_order', true ) );
+	$order = get_post_meta( $invoice, 'original_order', true );
 }
 
 /**
