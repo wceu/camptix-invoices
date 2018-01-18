@@ -196,7 +196,7 @@ function load_camptix_invoices() {
 			$arr = array(
 				'post_type'   => 'tix_invoice',
 				'post_status' => 'publish',
-				'post_title'  => sprintf( __( 'Facture n°%1$s la commande %2$s du %3$s' ), $number, get_post_meta( $attendee->ID, 'tix_transaction_id', true ), get_the_time( 'd/m/Y', $attendee ) ),
+				'post_title'  => sprintf( __( 'Facture n°%1$s de la commande %2$s du %3$s' ), $number, get_post_meta( $attendee->ID, 'tix_transaction_id', true ), get_the_time( 'd/m/Y', $attendee ) ),
 				'post_name'   => sprintf( 'invoice-%s', $number ),
 			);
 			$invoice = wp_insert_post( $arr );
@@ -206,6 +206,7 @@ function load_camptix_invoices() {
 			update_post_meta( $invoice, 'invoice_number', $number );
 			update_post_meta( $invoice, 'invoice_metas', $metas );
 			update_post_meta( $invoice, 'original_order', $order );
+			update_post_meta( $invoice, 'auth', uniqid() );
 		}
 
 		/**
@@ -323,10 +324,27 @@ function register_tix_invoice() {
 		'labels' => array(
 			'name' => __( 'Factures' ),
 		),
-		'public'       => true,
+		'supports'     => array( 'title' ),
+		'public'       => false,
 		'show_ui'      => true,
 		'show_in_menu' => 'edit.php?post_type=tix_ticket',
 	) );
+}
+
+/**
+ * Display an invoice button
+ */
+add_action( 'post_submitbox_misc_actions', 'ctx_invoice_link' );
+function ctx_invoice_link( $post ) {
+	if ( 'tix_invoice' !== $post->post_type ) {
+		return false;
+	}
+	$auth = get_post_meta( $post->ID, 'auth', true );
+	vprintf( '<div class="misc-pub-section"><a href="%s" class="button button-secondary" target="_blank">%2$s</a></div>',
+		array(
+			admin_url( 'admin-post.php?action=camptix-invoice.get&invoice_id=' . $post->ID . '&invoice_auth=' . $auth ),
+			__( 'Imprimer la facture' ),
+		) );
 }
 
 /**
@@ -335,11 +353,11 @@ function register_tix_invoice() {
 add_action( 'rest_api_init', function () {
 	register_rest_route( 'camptix-invoices/v1', '/invoice-form', array(
 		'methods'  => 'GET',
-		'callback' => 'camptix_invoice_form',
+		'callback' => 'ctx_invoice_form',
 	) );
 } );
 
-function camptix_invoice_form() {
+function ctx_invoice_form() {
 	$fields = array();
 	$fields['main' ]  = '<input type="checkbox" value="1" name="camptix-need-invoice" id="camptix-need-invoice"/> <label for="camptix-need-invoice">' . __( 'J’ai besoin d’une facture' ) . '</label>';
 	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-email">' . __( 'Email pour recevoir la facture' ) . ' <span class="tix-required-star">*</span></label></td>
@@ -352,4 +370,35 @@ function camptix_invoice_form() {
 	$fields_formatted = $fields['main'] . '<table class="camptix-invoice-details tix_tickets_table tix_invoice_table"><tbody><tr>' . implode( '</tr><tr>', $fields[ 'hidden'] ) . '</tr></tbody></table>';
 	$form = apply_filters( 'camptix-invoice/invoice-details-form', '<div class="camptix-invoice-toggle-wrapper">' . $fields_formatted . '</div>', $fields );
 	wp_send_json( array( 'form' => $form ) );
+}
+
+/**
+ * Add an admin_post endpoint to get an invoice
+ * @todo générer la facture
+ */
+add_action( 'admin_post_nopriv_camptix-invoice.get', 'ctx_get_invoice' );
+add_action( 'admin_post_camptix-invoice.get', 'ctx_get_invoice' );
+function ctx_get_invoice() {
+	if ( ! $invoice = ctx_can_get_invoice() ) {
+		die();
+	}
+	// Do stuff here @simon
+	var_dump( get_post_meta( $invoice, 'original_order', true ) );
+}
+
+/**
+ * Can a request print an invoice ?
+ */
+function ctx_can_get_invoice() {
+	if ( empty( $_REQUEST['invoice_id'] ) || empty( $_REQUEST['invoice_auth'] ) ) {
+		return false;
+	}
+	if ( 'tix_invoice' !== get_post_type( $_REQUEST['invoice_id'] ) ) {
+		return false;
+	}
+	$auth = get_post_meta( (int) $_REQUEST['invoice_id'], 'auth', true );
+	if ( $auth !== $_REQUEST['invoice_auth'] ) {
+		return false;
+	}
+	return (int) $_REQUEST['invoice_id'];
 }
