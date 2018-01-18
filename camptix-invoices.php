@@ -519,13 +519,14 @@ function ctx_assign_invoice_number( $id, $post ) {
 /**
  * Disallow an invoice to be edit after publish
  */
-add_action( 'transition_post_status', 'ctx_dissallow_invoice_edit', 10, 3 );
-function ctx_dissallow_invoice_edit( $new_status, $old_status, $post ) {
-	if ( 'tix_invoice' !== $post->post_type ) {
+add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
+function ctx_dissallow_invoice_edit( $post_id, $data ) {
+	if ( 'tix_invoice' !== get_post_type( $post_id ) ) {
 		return;
 	}
 
-    if ( $old_status === 'publish' && $new_status !== 'publish' ) {
+	$status = get_post_status( $post_id );
+    if ( $status === 'publish' ) {
 		wp_die( __( 'Il n’est pas possible de modifier une facture déjà publiée.', 'camptix-invoices' ) );
 	}
 }
