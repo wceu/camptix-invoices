@@ -572,7 +572,7 @@ function ctx_get_invoice() {
 	$order = get_post_meta( $invoice, 'original_order', true );
 	$metas = get_post_meta( $invoice, 'invoice_metas', true );
 	$opt = get_option( 'camptix_options' );
-	require('fdpf/facturePDF.php');
+	require('fpdf/facturePDF.php');
 	// #1 Initialize the basic information
 	//
 	// address of the company issuing the invoice
@@ -620,7 +620,7 @@ function ctx_get_invoice() {
 
 	// #3 Imports the template
 	//
-	require('fdpf/gabarit'.intval($_GET['id']).'.php');
+	require('fpdf/gabarit' . intval( $_GET['id'] ) . '.php');
 
 	// #4 Finalization
 	// build the PDF
