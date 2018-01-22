@@ -571,6 +571,7 @@ function ctx_get_invoice() {
 	// Manque traduction champs
 	$order = get_post_meta( $invoice, 'original_order', true );
 	$metas = get_post_meta( $invoice, 'invoice_metas', true );
+	$invoice_number = get_post_meta( $invoice, 'invoice_number', true );
 	$opt = get_option( 'camptix_options' );
 	require('fpdf/facturePDF.php');
 	// #1 Initialize the basic information
@@ -601,8 +602,8 @@ function ctx_get_invoice() {
 	// #2 Create an invoice
 	//
 	// invoice title, date, text before the page number
-	$invoice_title = get_the_title($invoice);
-	$pdf->initFacture($invoice_title, "", "");
+	$invoice_title = sprintf( __( 'Facture n°', 'camptix-invoices'), $invoice_number );
+	$pdf->initFacture( $invoice_title, '', '' );
 	// product
 	$items = $order['items'];
 	foreach($items as $item)
@@ -626,7 +627,7 @@ function ctx_get_invoice() {
 	// build the PDF
 	$pdf->buildPDF();
 	// download the file
-	$invoice_title = get_the_title($invoice);
+	$invoice_title = 'facture-' . sanititize_title( $invoice_number );
 	$pdf->Output($invoice_title . '.pdf', $_GET['download'] ? 'D':'I');
 }
 
