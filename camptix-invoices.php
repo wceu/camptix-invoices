@@ -567,7 +567,67 @@ function ctx_get_invoice() {
 		wp_die( __( 'Vous ne pouvez pas accéder à cette facture' ) );
 	}
 	// Do stuff here @simon
+	// Manque la devise pour le total ligne 618
+	// Manque traduction champs
 	$order = get_post_meta( $invoice, 'original_order', true );
+	$metas = get_post_meta( $invoice, 'invoice_metas', true );
+	$opt = get_option( 'camptix_options' );
+	require('fdpf/facturePDF.php');
+	// #1 Initialize the basic information
+	//
+	// address of the company issuing the invoice
+	$address = $opt['invoice-company'];
+	// customer address
+	$customerAddress = $metas['name'] . ' ' . $metas['address'];
+	// CGV
+	$cgv = $opt['invoice-cgv'];
+	// initialize the object invoicePDF
+	$pdf = new facturePDF($address, $customerAddress, $cgv);
+	// set the logo
+	$logo_url = wp_get_attachment_url($opt['invoice-logo']);
+	$pdf->setLogo($logo_url);
+	// product header
+	$pdf->productHeaderAddRow('Titre', 45, 'L');
+	$pdf->productHeaderAddRow('Prix unitaire', 45, 'C');
+	$pdf->productHeaderAddRow('Quantité', 45, 'C');
+	$pdf->productHeaderAddRow('Total', 45, 'C');
+	// header of the totals
+	$pdf->totalHeaderAddRow(30, 'L');
+	$pdf->totalHeaderAddRow(30, 'C');
+	// custom element
+	$pdf->elementAdd('', 'traitEnteteProduit', 'content');
+	$pdf->elementAdd('', 'traitBas', 'footer');
+
+	// #2 Create an invoice
+	//
+	// invoice title, date, text before the page number
+	$invoice_title = get_the_title($invoice);
+	$pdf->initFacture($invoice_title, "", "");
+	// product
+	$items = $order['items'];
+	foreach($items as $item)
+	{
+		$item_title = $item['name'];
+		$item_price = $item['price'];
+		$item_quatity = $item['quantity'];
+		$item_total = $item_price*$item_quatity;
+		$pdf->productAdd(array($item_title, $item_price, $item_quatity, $item_total));
+	}
+
+	// total line
+	$total = $order['total'];
+	$pdf->totalAdd(array('Montant total', $total));
+
+	// #3 Imports the template
+	//
+	require('fdpf/gabarit'.intval($_GET['id']).'.php');
+
+	// #4 Finalization
+	// build the PDF
+	$pdf->buildPDF();
+	// download the file
+	$invoice_title = get_the_title($invoice);
+	$pdf->Output($invoice_title . '.pdf', $_GET['download'] ? 'D':'I');
 }
 
 /**
