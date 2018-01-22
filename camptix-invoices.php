@@ -235,10 +235,10 @@ function load_camptix_invoices() {
 			$attachments = array( $invoice_pdf );
 			$opt         = get_option( 'camptix_options' );
 			$subject     = apply_filters( 'camptix-invoices-mailsubjet', sprintf( __( 'Votre facture – %s', 'camptix-invoices' ), $opt['event_name'] ), $opt['event_name'] );
-			$from        = apply_filters( 'camptix-invoices-mailfrom', get_option( 'admin_email' ) );
+			$from        = apply_filters( 'camptix-invoices-mailfrom', get_option( 'admin_email' ) );		
 			$headers     = apply_filters( 'camptix-invoices-mailheaders', array(
-				"From: {$opt['event_name']} <{$from}>;",
-				'Content-type: text/html;',
+				"From: {$opt['event_name']} <{$from}>",
+				'Content-type: text/html; charset=UTF-8',
 			) );
 			$message     = array(
 				__( 'Bonjour,', 'camptix-invoices' ),
@@ -681,7 +681,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 			mkdir( $upload_dir, 0700 );
 		}
 		$path = $upload_dir . '/' . $invoice_title;
-		$pdf->Output( $invoice_title, 'F' );
+		$pdf->Output( $path, 'F' );
 		return $path;
 	}
 }
