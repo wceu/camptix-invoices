@@ -602,7 +602,7 @@ function ctx_get_invoice() {
 	// #2 Create an invoice
 	//
 	// invoice title, date, text before the page number
-	$invoice_title = sprintf( __( 'Facture n°', 'camptix-invoices'), $invoice_number );
+	$invoice_title = sprintf( __( 'Facture n° %s', 'camptix-invoices'), $invoice_number );
 	$pdf->initFacture( $invoice_title, '', '' );
 	// product
 	$items = $order['items'];
