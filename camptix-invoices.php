@@ -149,14 +149,14 @@ function load_camptix_invoices() {
 
 			$attendees = get_posts( array(
 				'posts_per_page' => -1,
-				'post_type' => 'tix_attendee',
-				'post_status' => 'any',
-				'meta_query' => array(
+				'post_type'      => 'tix_attendee',
+				'post_status'    => 'any',
+				'meta_query'     => array(
 					array(
-						'key' => 'tix_payment_token',
-						'compare' => '=',
-						'value' => $payment_token,
-						'type' => 'CHAR',
+						'key'     => 'tix_payment_token',
+						'compare' => ' = ',
+						'value'   => $payment_token,
+						'type'    => 'CHAR',
 					),
 				),
 			) );
