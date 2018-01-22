@@ -128,7 +128,7 @@ function load_camptix_invoices() {
 				$output['invoice-logo'] = (int) $input['invoice-logo'];
 			}
 			if ( isset( $input['invoice-company'] ) ) {
-				$output['invoice-company'] = sanitize_text_field( $input['invoice-company'] );
+				$output['invoice-company'] = sanitize_textarea_field( $input['invoice-company'] );
 			}
 			if ( isset( $input['invoice-cgv'] ) ) {
 				$output['invoice-cgv'] = sanitize_textarea_field( $input['invoice-cgv'] );
@@ -566,6 +566,7 @@ function ctx_get_invoice() {
 	if ( ! $invoice = ctx_can_get_invoice() ) {
 		wp_die( __( 'Vous ne pouvez pas accéder à cette facture' ) );
 	}
+	$obj = get_post( $invoice );
 	$order = get_post_meta( $invoice, 'original_order', true );
 	$metas = get_post_meta( $invoice, 'invoice_metas', true );
 	$invoice_number = get_post_meta( $invoice, 'invoice_number', true );
@@ -576,13 +577,14 @@ function ctx_get_invoice() {
 	// #1 Initialize the basic information
 	//
 	// address of the company issuing the invoice
-	$address = $opt['invoice-company'];
+	$address = __( 'Organisateur :', 'camptix-invoices' ) . PHP_EOL . $opt['invoice-company'];
+	$thank_you = $opt['invoice-thankyou'];
 	// customer address
-	$customerAddress = $metas['name'] . PHP_EOL . $metas['address'];
+	$customerAddress = implode( PHP_EOL, array( $metas['name'], $metas['address'], $metas['email'] ) );
 	// CGV
 	$cgv = $opt['invoice-cgv'];
 	// initialize the object invoicePDF
-	$pdf = new facturePDF( $address, $customerAddress, $cgv );
+	$pdf = new facturePDF( $address, $customerAddress, $cgv . PHP_EOL . $thank_you );
 	// set the logo
 	$logo_url = wp_get_attachment_url( $opt['invoice-logo'] );
 	$pdf->setLogo( $logo_url );
@@ -597,12 +599,12 @@ function ctx_get_invoice() {
 	// custom element
 	$pdf->elementAdd( '', 'traitEnteteProduit', 'content' );
 	$pdf->elementAdd( '', 'traitBas', 'footer' );
-
+	
 	// #2 Create an invoice
 	//
 	// invoice title, date, text before the page number
 	$invoice_title = sprintf( __( 'Facture n° %s', 'camptix-invoices'), $invoice_number );
-	$pdf->initFacture( $invoice_title, '', '' );
+	$pdf->initFacture( $invoice_title, date_i18n( '\L\e d F Y', strtotime( $obj->post_date ) ), '' );
 	// product
 	$items = $order['items'];
 	foreach ( $items as $item ) {
@@ -612,18 +614,18 @@ function ctx_get_invoice() {
 		$item_total   = number_format_i18n( $item_price * $item_quatity, 2 ) . ' ' . utf8_encode( chr(128) );
 		$pdf->productAdd( array( $item_title, $item_price, $item_quatity, $item_total ) );
 	}
-
+	
 	// total line
 	/**
 	 * @todo patch ut8 currency
 	 */
 	$total = sprintf( '%s ' . utf8_encode( chr(128) ), number_format_i18n( $order['total'], 2 ) );
-	$pdf->totalAdd( array( __( 'Montant total', 'camptix-invoices' ), $total ) );
-
+	$pdf->totalAdd( array( __( 'Montant total :', 'camptix-invoices' ), $total ) );
+	
 	// #3 Imports the template
 	//
 	require( 'fpdf/gabarit' . intval( $_GET['id'] ) . '.php' );
-
+	
 	// #4 Finalization
 	// build the PDF
 	$pdf->buildPDF();
