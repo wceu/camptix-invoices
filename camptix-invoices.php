@@ -566,38 +566,37 @@ function ctx_get_invoice() {
 	if ( ! $invoice = ctx_can_get_invoice() ) {
 		wp_die( __( 'Vous ne pouvez pas accéder à cette facture' ) );
 	}
-	// Do stuff here @simon
-	// Manque la devise pour le total ligne 618
-	// Manque traduction champs
 	$order = get_post_meta( $invoice, 'original_order', true );
 	$metas = get_post_meta( $invoice, 'invoice_metas', true );
 	$invoice_number = get_post_meta( $invoice, 'invoice_number', true );
 	$opt = get_option( 'camptix_options' );
-	require('fpdf/facturePDF.php');
+	$currencies = CampTix_Plugin::get_currencies();
+	$currency = ! empty( $currencies[ $opt['currency'] ]['format'] ) ? $currencies[ $opt['currency'] ]['format'] : $currencies[ $opt['currency'] ]['label'];
+	require( 'fpdf/facturePDF.php' );
 	// #1 Initialize the basic information
 	//
 	// address of the company issuing the invoice
 	$address = $opt['invoice-company'];
 	// customer address
-	$customerAddress = $metas['name'] . ' ' . $metas['address'];
+	$customerAddress = $metas['name'] . PHP_EOL . $metas['address'];
 	// CGV
 	$cgv = $opt['invoice-cgv'];
 	// initialize the object invoicePDF
-	$pdf = new facturePDF($address, $customerAddress, $cgv);
+	$pdf = new facturePDF( $address, $customerAddress, $cgv );
 	// set the logo
-	$logo_url = wp_get_attachment_url($opt['invoice-logo']);
-	$pdf->setLogo($logo_url);
+	$logo_url = wp_get_attachment_url( $opt['invoice-logo'] );
+	$pdf->setLogo( $logo_url );
 	// product header
-	$pdf->productHeaderAddRow('Titre', 45, 'L');
-	$pdf->productHeaderAddRow('Prix unitaire', 45, 'C');
-	$pdf->productHeaderAddRow('Quantité', 45, 'C');
-	$pdf->productHeaderAddRow('Total', 45, 'C');
+	$pdf->productHeaderAddRow( __( 'Titre', 'camptix-invoices' ), 45, 'L' );
+	$pdf->productHeaderAddRow( __( 'Prix unitaire', 'camptix-invoices' ), 45, 'C' );
+	$pdf->productHeaderAddRow( __( 'Quantité', 'camptix-invoices' ), 45, 'C' );
+	$pdf->productHeaderAddRow( __( 'Total', 'camptix-invoices' ), 45, 'C' );
 	// header of the totals
-	$pdf->totalHeaderAddRow(30, 'L');
-	$pdf->totalHeaderAddRow(30, 'C');
+	$pdf->totalHeaderAddRow( 30, 'L' );
+	$pdf->totalHeaderAddRow( 30, 'C' );
 	// custom element
-	$pdf->elementAdd('', 'traitEnteteProduit', 'content');
-	$pdf->elementAdd('', 'traitBas', 'footer');
+	$pdf->elementAdd( '', 'traitEnteteProduit', 'content' );
+	$pdf->elementAdd( '', 'traitBas', 'footer' );
 
 	// #2 Create an invoice
 	//
@@ -606,29 +605,31 @@ function ctx_get_invoice() {
 	$pdf->initFacture( $invoice_title, '', '' );
 	// product
 	$items = $order['items'];
-	foreach($items as $item)
-	{
-		$item_title = $item['name'];
-		$item_price = $item['price'];
+	foreach ( $items as $item ) {
+		$item_title   = $item['name'];
+		$item_price   = number_format_i18n( $item['price'], 2 ) . ' ' . utf8_encode( chr(128) );
 		$item_quatity = $item['quantity'];
-		$item_total = $item_price*$item_quatity;
-		$pdf->productAdd(array($item_title, $item_price, $item_quatity, $item_total));
+		$item_total   = number_format_i18n( $item_price * $item_quatity, 2 ) . ' ' . utf8_encode( chr(128) );
+		$pdf->productAdd( array( $item_title, $item_price, $item_quatity, $item_total ) );
 	}
 
 	// total line
-	$total = $order['total'];
-	$pdf->totalAdd(array('Montant total', $total));
+	/**
+	 * @todo patch ut8 currency
+	 */
+	$total = sprintf( '%s ' . utf8_encode( chr(128) ), number_format_i18n( $order['total'], 2 ) );
+	$pdf->totalAdd( array( __( 'Montant total', 'camptix-invoices' ), $total ) );
 
 	// #3 Imports the template
 	//
-	require('fpdf/gabarit' . intval( $_GET['id'] ) . '.php');
+	require( 'fpdf/gabarit' . intval( $_GET['id'] ) . '.php' );
 
 	// #4 Finalization
 	// build the PDF
 	$pdf->buildPDF();
 	// download the file
 	$invoice_title = 'facture-' . sanitize_title( $invoice_number );
-	$pdf->Output($invoice_title . '.pdf', $_GET['download'] ? 'D':'I');
+	$pdf->Output( $invoice_title . '.pdf', $_GET['download'] ? 'D' : 'I' );
 }
 
 /**
