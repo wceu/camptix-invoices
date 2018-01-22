@@ -26,7 +26,7 @@ public $template;
 // $atextAdr1 : adresse de l'entreprise
 // $atextAdr2 : adresse du client
 // $aFooter : texte du pied de page
-function facturePDF($atextAdr1='', $atextAdr2='', $aFooter=''){
+function __construct($atextAdr1='', $atextAdr2='', $aFooter=''){
 	parent::__construct();
 	$this->SetMargins(0, 0, 0);
 	$this->SetFont('Helvetica', '', 11);

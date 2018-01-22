@@ -182,7 +182,7 @@ function load_camptix_invoices() {
 			$year = date( 'Y' );
 
 			if ( ! empty( $opt['invoice-new-year-reset'] ) ) {
-				if ( $opt['invoice-current-year'] != $year ) {
+				if ( ! empty( $opt['invoice-current-year'] ) && $opt['invoice-current-year'] != $year ) {
 					$opt['invoice-current-number'] = 1;
 					$current = 1;
 				}
