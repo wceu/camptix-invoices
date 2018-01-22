@@ -627,7 +627,7 @@ function ctx_get_invoice() {
 	// build the PDF
 	$pdf->buildPDF();
 	// download the file
-	$invoice_title = 'facture-' . sanititize_title( $invoice_number );
+	$invoice_title = 'facture-' . sanitize_title( $invoice_number );
 	$pdf->Output($invoice_title . '.pdf', $_GET['download'] ? 'D':'I');
 }
 

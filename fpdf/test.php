@@ -42,4 +42,3 @@ require('gabarit'.intval($_GET['id']).'.php');
 $pdf->buildPDF();
 // télécharge le fichier
 $pdf->Output('Facture.pdf', $_GET['download'] ? 'D':'I');
-?>

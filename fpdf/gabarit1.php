@@ -51,4 +51,3 @@ $pdf->template['traitEnteteProduit']['margin'] = array(80, 0, 0, 0);
 $pdf->template['traitBas']['lineHeight'] = 1;
 $pdf->template['traitBas']['backgroundColor'] = array('r'=>255, 'g'=>210, 'b'=>255);
 $pdf->template['traitBas']['margin'] = array(290, 40, 0, 40);
-?>
