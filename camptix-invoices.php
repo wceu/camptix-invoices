@@ -571,8 +571,7 @@ function ctx_get_invoice() {
 	$metas = get_post_meta( $invoice, 'invoice_metas', true );
 	$invoice_number = get_post_meta( $invoice, 'invoice_number', true );
 	$opt = get_option( 'camptix_options' );
-	$currencies = CampTix_Plugin::get_currencies();
-	$currency = ! empty( $currencies[ $opt['currency'] ]['format'] ) ? $currencies[ $opt['currency'] ]['format'] : $currencies[ $opt['currency'] ]['label'];
+	$currency = esc_html( $opt['currency'] );
 	require( 'fpdf/facturePDF.php' );
 	// #1 Initialize the basic information
 	//
@@ -609,9 +608,9 @@ function ctx_get_invoice() {
 	$items = $order['items'];
 	foreach ( $items as $item ) {
 		$item_title   = $item['name'];
-		$item_price   = number_format_i18n( $item['price'], 2 ) . ' ' . utf8_encode( chr(128) );
+		$item_price   = number_format_i18n( $item['price'], 2 );
 		$item_quatity = $item['quantity'];
-		$item_total   = number_format_i18n( $item_price * $item_quatity, 2 ) . ' ' . utf8_encode( chr(128) );
+		$item_total   = number_format_i18n( $item_price * $item_quatity, 2 );
 		$pdf->productAdd( array( $item_title, $item_price, $item_quatity, $item_total ) );
 	}
 	
@@ -619,7 +618,7 @@ function ctx_get_invoice() {
 	/**
 	 * @todo patch ut8 currency
 	 */
-	$total = sprintf( '%s ' . utf8_encode( chr(128) ), number_format_i18n( $order['total'], 2 ) );
+	$total = number_format_i18n( $order['total'], 2 ) . ' ' . $currency;
 	$pdf->totalAdd( array( __( 'Montant total :', 'camptix-invoices' ), $total ) );
 	
 	// #3 Imports the template
