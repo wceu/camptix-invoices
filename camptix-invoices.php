@@ -568,6 +568,7 @@ function ctx_get_invoice() {
 	}
 	// Do stuff here @simon
 	// Manque la devise pour le total ligne 618
+	// Manque traduction champs
 	$order = get_post_meta( $invoice, 'original_order', true );
 	$metas = get_post_meta( $invoice, 'invoice_metas', true );
 	$opt = get_option( 'camptix_options' );
