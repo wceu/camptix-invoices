@@ -42,5 +42,3 @@ $pdf->template['totalHead']['margin'] = array(10, 0, 0, 0);
 // liste des totaux
 $pdf->template['total']['margin'] = array(1, 0, 1, 130);
 // element personnalisé
-
-?>
