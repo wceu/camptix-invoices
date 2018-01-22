@@ -670,7 +670,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$pdf->buildPDF();
 	// download the file
 	$invoice_title = 'facture-' . sanitize_title( $invoice_number ) . '.pdf';
-	if ( in_array( array( 'D', 'I' ), $target ) ) {
+	if ( in_array( $target, array( 'D', 'I' ) ) ) {
 		$pdf->Output( $invoice_title, $target );
 		die();
 	} else {
