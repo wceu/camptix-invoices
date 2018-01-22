@@ -165,7 +165,10 @@ function load_camptix_invoices() {
 			}
 			if ( $metas = get_post_meta( $attendees[0]->ID, 'invoice_metas', true ) ) {
 				$order = get_post_meta( $attendees[0]->ID, 'tix_order', true );
-				CampTix_Addon_Invoices::create_invoice( $attendees[0], $order, $metas );
+				$invoice_id = CampTix_Addon_Invoices::create_invoice( $attendees[0], $order, $metas );
+				if ( ! is_wp_error( $invoice_id ) && ! empty( $invoice_id ) ) {
+					CampTix_Addon_Invoices::send_invoice( $invoice_id );
+				}
 			}
 		}
 
@@ -216,6 +219,38 @@ function load_camptix_invoices() {
 			update_post_meta( $invoice, 'invoice_metas', $metas );
 			update_post_meta( $invoice, 'original_order', $order );
 			update_post_meta( $invoice, 'auth', uniqid() );
+
+			return $invoice;
+		}
+
+		/**
+		 * Send invoice by mail
+		 */
+		static function send_invoice( $invoice_id ) {
+			$i_m = get_post_meta( $invoice_id, 'invoice_metas', true );
+			if ( empty( $i_m['email'] ) && is_email( $i_m['email'] ) ) {
+				return false;
+			}
+			$invoice_pdf = ctx_get_invoice( $invoice_id, 'F' );
+			$attachments = array( $invoice_pdf );
+			$opt         = get_option( 'camptix_options' );
+			$subject     = apply_filters( 'camptix-invoices-mailsubjet', sprintf( __( 'Votre facture – %s', 'camptix-invoices' ), $opt['event_name'] ), $opt['event_name'] );
+			$from        = apply_filters( 'camptix-invoices-mailfrom', get_option( 'admin_email' ) );
+			$headers     = apply_filters( 'camptix-invoices-mailheaders', array(
+				"From: {$opt['event_name']} <{$from}>;",
+				'Content-type: text/html;',
+			) );
+			$message     = array(
+				__( 'Bonjour,', 'camptix-invoices' ),
+				sprintf( __( 'Comme demandé lors de l’achat, vous trouverez en pièce jointe de cette email la facture de vos billets pour l‘événement « %s ».', 'camptix-invoices' ), sanitize_text_field( $opt['event_name'] ) ),
+				sprintf( __( 'En cas de réclamation, vous pouvez contacter notre équipe à l’adresse %s', 'camptix-invoices' ), $from ),
+				__( 'Nous vous souhaitons une excellente journée !', 'camptix-invoices' ),
+				'',
+				sprintf( __( 'L’équipe du %s', 'camptix-invoices' ), sanitize_text_field( $opt['event_name'] ) ),
+			);
+			$message = implode( PHP_EOL, $message );
+			$message = '<p>' . nl2br( $message ) . '</p>';
+			wp_mail( $i_m['email'], $subject, $message, $headers, $attachments );
 		}
 
 		/**
@@ -560,16 +595,23 @@ function ctx_invoice_form() {
  * Add an admin_post endpoint to get an invoice
  * @todo générer la facture
  */
-add_action( 'admin_post_nopriv_camptix-invoice.get', 'ctx_get_invoice' );
-add_action( 'admin_post_camptix-invoice.get', 'ctx_get_invoice' );
-function ctx_get_invoice() {
+add_action( 'admin_post_nopriv_camptix-invoice.get', 'ctx_download_invoice' );
+add_action( 'admin_post_camptix-invoice.get', 'ctx_download_invoice' );
+function ctx_download_invoice() {
 	if ( ! $invoice = ctx_can_get_invoice() ) {
 		wp_die( __( 'Vous ne pouvez pas accéder à cette facture' ) );
 	}
+	ctx_get_invoice( $invoice );
+}
+
+/**
+ * Generate a PDF invoice
+ */
+function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$obj = get_post( $invoice );
 	$order = get_post_meta( $invoice, 'original_order', true );
 	$metas = get_post_meta( $invoice, 'invoice_metas', true );
-	$invoice_number = get_post_meta( $invoice, 'invoice_number', true );
+	$invoice_number = sanitize_title( get_post_meta( $invoice, 'invoice_number', true ) );
 	$opt = get_option( 'camptix_options' );
 	$currency = esc_html( $opt['currency'] );
 	require( 'fpdf/facturePDF.php' );
@@ -615,9 +657,6 @@ function ctx_get_invoice() {
 	}
 	
 	// total line
-	/**
-	 * @todo patch ut8 currency
-	 */
 	$total = number_format_i18n( $order['total'], 2 ) . ' ' . $currency;
 	$pdf->totalAdd( array( __( 'Montant total :', 'camptix-invoices' ), $total ) );
 	
@@ -630,8 +669,21 @@ function ctx_get_invoice() {
 	// build the PDF
 	$pdf->buildPDF();
 	// download the file
-	$invoice_title = 'facture-' . sanitize_title( $invoice_number );
-	$pdf->Output( $invoice_title . '.pdf', $_GET['download'] ? 'D' : 'I' );
+	$invoice_title = 'facture-' . sanitize_title( $invoice_number ) . '.pdf';
+	if ( in_array( array( 'D', 'I' ), $target ) ) {
+		$pdf->Output( $invoice_title, $target );
+		die();
+	} else {
+		$upload = wp_upload_dir();
+		$upload_dir = $upload['basedir'];
+		$upload_dir = $upload_dir . '/camptix-invoices';
+		if ( ! is_dir( $upload_dir ) ) {
+			mkdir( $upload_dir, 0700 );
+		}
+		$path = $upload_dir . '/' . $invoice_title;
+		$pdf->Output( $invoice_title, 'F' );
+		return $path;
+	}
 }
 
 /**
