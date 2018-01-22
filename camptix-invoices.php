@@ -623,7 +623,8 @@ function ctx_get_invoice() {
 	
 	// #3 Imports the template
 	//
-	require( 'fpdf/gabarit' . intval( $_GET['id'] ) . '.php' );
+	$template = locate_template( 'gabarit-invoice.php' ) ? locate_template( 'gabarit-invoice.php' ) : 'fpdf/gabarit.php';
+	require( $template );
 	
 	// #4 Finalization
 	// build the PDF
