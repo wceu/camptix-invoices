@@ -679,6 +679,16 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 		$upload_dir = $upload_dir . '/camptix-invoices';
 		if ( ! is_dir( $upload_dir ) ) {
 			mkdir( $upload_dir, 0700 );
+			foreach( array(
+				'.htaccess'  => 'Deny from all',
+				'index.html' => '',
+			) as $file => $content ) {
+				$file_handle = @fopen( trailingslashit( $upload_dir ) . $file, 'w' );
+				if ( $file_handle ) {
+					fwrite( $file_handle, $content );
+					fclose( $file_handle );
+				}
+			}
 		}
 		$path = $upload_dir . '/' . $invoice_title;
 		$pdf->Output( $path, 'F' );
