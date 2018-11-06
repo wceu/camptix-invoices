@@ -192,7 +192,7 @@ public function buildPDF(){
 // $aText : texte à afficher
 // $aTplt : gabarit à utiliser
 private function prepareLine($aText, $aTplt, $aInitPos=1){
-	// initialise la position 
+	// initialise la position
 	if($aInitPos) $this->SetXY(0, 0);
 	// calcul la largeur (dimension du fichier - marge gauche et droite - padding gauche et droit)
 	$w = $this->w-$aTplt['margin'][1]-$aTplt['margin'][3]-$aTplt['padding'][1]-$aTplt['padding'][3];
