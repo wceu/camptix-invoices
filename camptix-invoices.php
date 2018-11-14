@@ -1,380 +1,33 @@
 <?php
-
 /**
  * Plugin name: Camptix Invoices
- * Description: Allow Camptix user to send invoices when a attendee buy a ticket
+ * Description: Allow Camptix user to send invoices when an attendee buys a ticket
  * Version: 1.0.0
  * Author: Willy Bahuaud, Simon Janin
  * Author URI: https://2018.wptech.io
  * Text Domain: invoices-camptix
+ *
+ * @package Camptix_Invoices
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	die();
-}
+defined( 'ABSPATH' ) || exit;
 
 define( 'CTX_INV_VER', '1.0.0' );
+define( 'CTX_INV_URL', untrailingslashit( plugin_dir_url( __FILE__ ) ) );
+define( 'CTX_INV_ADMIN_URL', CTX_INV_URL . '/admin' );
 
 /**
- * Load invoice addon
+ * Load invoice addon.
  */
-add_action( 'camptix_load_addons', 'load_camptix_invoices' );
 function load_camptix_invoices() {
-	class CampTix_Addon_Invoices extends \CampTix_Addon {
-		/**
-		 * Init invoice addon
-		 */
-		function camptix_init() {
-			global $camptix;
-			global $camptix_invoice_custom_error;
-			$camptix_invoice_custom_error = false;
-			add_filter( 'camptix_setup_sections', array( __CLASS__, 'invoice_settings_tab' ) );
-			add_action( 'camptix_menu_setup_controls', array( __CLASS__, 'invoice_settings' ) );
-			add_filter( 'camptix_validate_options', array( __CLASS__, 'validate_options' ), 10, 2 );
-			add_action( 'camptix_payment_result', array( __CLASS__, 'maybe_create_invoice' ), 10, 3 );
-			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_enqueue_assets' ) );
-			add_filter( 'camptix_checkout_attendee_info', array( __CLASS__, 'attendee_info' ) );
-			add_action( 'camptix_notices', array( __CLASS__, 'error_flag' ), 0 );
-			add_filter( 'camptix_form_register_complete_attendee_object', array( __CLASS__, 'attendee_object' ), 10, 2 );
-			add_action( 'camptix_checkout_update_post_meta', array( __CLASS__, 'add_meta_invoice_on_attendee' ), 10, 2 );
-			add_filter( 'camptix_metabox_attendee_info_additional_rows', array( __CLASS__, 'add_invoice_meta_on_attendee_metabox' ), 10, 2 );
-		}
-
-		/**
-		 * Add a new tab in camptix settings
-		 */
-		static function invoice_settings_tab( $sections ) {
-			$sections['invoice'] = __( 'Invoicing', 'invoices-camptix' );
-			return $sections;
-		}
-
-		/**
-		 * Tab content
-		 */
-		static function invoice_settings( $section ) {
-			if ( 'invoice' !== $section ) {
-				return false;
-			}
-			$opt = get_option( 'camptix_options' );
-			add_settings_section( 'invoice', __( 'Invoices settings', 'invoices-camptix' ), '__return_false', 'camptix_options' );
-			global $camptix;
-			$camptix->add_settings_field_helper( 'invoice-new-year-reset', __( 'Yearly reset', 'invoices-camptix' ), 'field_yesno', 'invoice',
-				// translators: %1$s is a date.
-				sprintf( __( 'Invoice numbers are prefixed with the year, and will be reset on the 1st of January (e.g. %1$s-125)', 'invoices-camptix' ), date( 'Y' ) )
-			);
-			add_settings_field( 'invoice-current-number', __( 'Next invoice', 'invoices-camptix' ), array( __CLASS__, 'current_number_callback' ), 'camptix_options', 'invoice', array(
-				'id'     => 'invoice-current-number',
-				'value'  => isset( $opt['invoice-current-number'] ) ? $opt['invoice-current-number'] : 1,
-				'yearly' => isset( $opt['invoice-new-year-reset'] ) ? $opt['invoice-new-year-reset'] : false,
-			) );
-			add_settings_field( 'invoice-logo', __( 'Logo', 'invoices-camptix' ), array( __CLASS__, 'type_file_callback' ), 'camptix_options', 'invoice', array(
-				'id'    => 'invoice-logo',
-				'value' => ! empty( $opt['invoice-logo'] ) ? $opt['invoice-logo'] : '',
-			) );
-			$camptix->add_settings_field_helper( 'invoice-company', __( 'Company address', 'invoices-camptix' ), 'field_textarea', 'invoice' );
-			$camptix->add_settings_field_helper( 'invoice-tac', __( 'Terms and Conditions', 'invoices-camptix' ), 'field_textarea', 'invoice' );
-			$camptix->add_settings_field_helper( 'invoice-thankyou', __( 'Note below invoice total', 'invoices-camptix' ), 'field_textarea', 'invoice' );
-		}
-
-		/**
-		 * Next invoice number setting
-		 */
-		static function current_number_callback( $args ) {
-			vprintf( '<p>' . __( "The next invoice's number will be", 'invoices-camptix' ) . ' %3$s<input type="number" min="1" value="%2$d" name="camptix_options[%1$s]" class="small-text">%4$s</p>', array(
-				esc_attr( $args['id'] ),
-				esc_attr( $args['value'] ),
-				$args['yearly'] ? '<code>' . date( 'Y-' ) : '',
-				$args['yearly'] ? '</code>' : '',
-			) );
-		}
-
-		/**
-		 * Input type file
-		 */
-		static function type_file_callback( $args ) {
-			wp_enqueue_media();
-			wp_enqueue_script( 'admin-camptix-invoices' );
-			wp_localize_script( 'admin-camptix-invoices', 'camptixInvoiceBackVars', array(
-				'selectText'  => __( 'Pick a logo to upload', 'invoices-camptix' ),
-				'selectImage' => __( 'Pick this logo', 'invoices-camptix' ),
-			) );
-
-			vprintf( '<div class="camptix-media"><div class="camptix-invoice-logo-preview-wrapper" data-imagewrapper>
-				%4$s
-			</div>
-			<input data-set type="button" class="button button-secondary" value="%3$s" />
-			<input data-unset type="button" class="button button-secondary" value="%5$s"%6$s/>
-			<input type="hidden" name=camptix_options[%1$s] data-field="image_attachment" value="%2$s"></div>', array(
-				esc_attr( $args['id'] ),
-				esc_attr( $args['value'] ),
-				esc_attr__( 'Pick a logo', 'invoices-camptix' ),
-				! empty( $args['value'] ) ? wp_get_attachment_image( $args['value'], 'thumbnail', '', array() ) : '',
-				esc_attr__( 'Remove logo', 'invoices-camptix' ),
-				empty( $args['value'] ) ? ' style="display:none;"' : '',
-			) );
-		}
-
-		/**
-		 * Validate our custom options
-		 */
-		static function validate_options( $output, $input ) {
-			if ( isset( $input['invoice-new-year-reset'] ) ) {
-				$output['invoice-new-year-reset'] = (int) $input['invoice-new-year-reset'];
-			}
-			if ( ! empty( $input['invoice-current-number'] ) ) {
-				$output['invoice-current-number'] = (int) $input['invoice-current-number'];
-			}
-			if ( isset( $input['invoice-logo'] ) ) {
-				$output['invoice-logo'] = (int) $input['invoice-logo'];
-			}
-			if ( isset( $input['invoice-company'] ) ) {
-				$output['invoice-company'] = sanitize_textarea_field( $input['invoice-company'] );
-			}
-			if ( isset( $input['invoice-tac'] ) ) {
-				$output['invoice-tac'] = sanitize_textarea_field( $input['invoice-tac'] );
-			}
-			if ( isset( $input['invoice-thankyou'] ) ) {
-				$output['invoice-thankyou'] = sanitize_textarea_field( $input['invoice-thankyou'] );
-			}
-			return $output;
-		}
-
-		/**
-		 * Listen payment result to create invoice
-		 */
-		static function maybe_create_invoice( $payment_token, $result, $data ) {
-			if ( 2 !== $result ) {
-				return;
-			}
-
-			$attendees = get_posts( array(
-				'posts_per_page' => -1,
-				'post_type'      => 'tix_attendee',
-				'post_status'    => 'any',
-				'meta_query'     => array(
-					array(
-						'key'     => 'tix_payment_token',
-						'compare' => ' = ',
-						'value'   => $payment_token,
-						'type'    => 'CHAR',
-					),
-				),
-			) );
-			if ( ! $attendees ) {
-				return;
-			}
-			if ( $metas = get_post_meta( $attendees[0]->ID, 'invoice_metas', true ) ) {
-				$order = get_post_meta( $attendees[0]->ID, 'tix_order', true );
-				$invoice_id = CampTix_Addon_Invoices::create_invoice( $attendees[0], $order, $metas );
-				if ( ! is_wp_error( $invoice_id ) && ! empty( $invoice_id ) ) {
-					CampTix_Addon_Invoices::send_invoice( $invoice_id );
-				}
-			}
-		}
-
-		/**
-		 * Get, increment and return invoice number
-		 * @todo can be refactorized
-		 */
-		static function create_invoice_number() {
-			$opt     = get_option( 'camptix_options' );
-			$current = ! empty( $opt['invoice-current-number'] ) ? intval( $opt['invoice-current-number'] ) : 1;
-			$year    = date( 'Y' );
-
-			if ( ! empty( $opt['invoice-new-year-reset'] ) ) {
-				if ( ! empty( $opt['invoice-current-year'] ) && $opt['invoice-current-year'] !== $year ) {
-					$opt['invoice-current-number'] = 1;
-					$current                       = 1;
-				}
-				$current = sprintf( '%s-%s', $year, $current );
-			}
-
-			$opt['invoice-current-year'] = $year;
-			$opt['invoice-current-number']++;
-			update_option( 'camptix_options', $opt );
-			return $current;
-		}
-
-		/**
-		 * Create invoice
-		 *
-		 * @todo Link invoice and corresponding attendees
-		 */
-		static function create_invoice( $attendee, $order, $metas ) {
-			$number = CampTix_Addon_Invoices::create_invoice_number();
-
-			// Prevent invoice_number from being assigned twice.
-			remove_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10 );
-
-			$arr = array(
-				'post_type'   => 'tix_invoice',
-				'post_status' => 'publish',
-				'post_title'  => sprintf(
-					// translators: 1: invoice number, 2: transaction id, 3. date.
-					__( 'Invoice #%1$s for order #%2$s on %3$s', 'invoices-camptix' ),
-					$number,
-					get_post_meta( $attendee->ID, 'tix_transaction_id', true ),
-					get_the_time( 'd/m/Y', $attendee )
-				),
-				'post_name'   => sprintf( 'invoice-%s', $number ),
-			);
-
-			$invoice = wp_insert_post( $arr );
-			if ( ! $invoice || is_wp_error( $invoice ) ) {
-				return;
-			}
-			update_post_meta( $invoice, 'invoice_number', $number );
-			update_post_meta( $invoice, 'invoice_metas', $metas );
-			update_post_meta( $invoice, 'original_order', $order );
-			update_post_meta( $invoice, 'auth', uniqid() );
-
-			return $invoice;
-		}
-
-		/**
-		 * Send invoice by mail
-		 *
-		 * @todo Add a template for $message in the settings.
-		 */
-		static function send_invoice( $invoice_id ) {
-			$i_m = get_post_meta( $invoice_id, 'invoice_metas', true );
-			if ( empty( $i_m['email'] ) && is_email( $i_m['email'] ) ) {
-				return false;
-			}
-			$invoice_pdf = ctx_get_invoice( $invoice_id, 'F' );
-			$attachments = array( $invoice_pdf );
-			$opt         = get_option( 'camptix_options' );
-			$subject     = apply_filters( 'camptix-invoices-mailsubjet', sprintf( __( 'Your invoice – %s', 'invoices-camptix' ), $opt['event_name'] ), $opt['event_name'] );
-			$from        = apply_filters( 'camptix-invoices-mailfrom', get_option( 'admin_email' ) );
-			$headers     = apply_filters( 'camptix-invoices-mailheaders', array(
-				"From: {$opt['event_name']} <{$from}>",
-				'Content-type: text/html; charset=UTF-8',
-			) );
-			$message     = array(
-				__( 'Hello,', 'invoices-camptix' ),
-				// translators: event name.
-				sprintf( __( 'As requested during your purchase, please find attached an invoice for your tickets to « %s ».', 'invoices-camptix' ), sanitize_text_field( $opt['event_name'] ) ),
-				// translators: email.
-				sprintf( __( 'Please let us know if we can be of any further assistance at %s.', 'invoices-camptix' ), $from ),
-				__( 'Kind regards', 'invoices-camptix' ),
-				'',
-				// translators: event name.
-				sprintf( __( 'The %s team', 'invoices-camptix' ), sanitize_text_field( $opt['event_name'] ) ),
-			);
-			$message     = implode( PHP_EOL, $message );
-			$message     = '<p>' . nl2br( $message ) . '</p>';
-			wp_mail( $i_m['email'], $subject, $message, $headers, $attachments );
-		}
-
-		/**
-		 * Enqueue assets
-		 *
-		 * @todo enqueue only on [camptix] shortcode
-		 */
-		static function enqueue_assets() {
-			wp_register_script( 'invoices-camptix', plugins_url( 'camptix-invoices.js', __FILE__ ), array( 'jquery' ), CTX_INV_VER, true );
-			wp_enqueue_script( 'invoices-camptix' );
-			wp_localize_script( 'invoices-camptix', 'camptixInvoicesVars', array(
-				'invoiceDetailsForm' => home_url( '/wp-json/camptix-invoices/v1/invoice-form' ),
-			) );
-			wp_register_style( 'camptix-invoices-css', plugins_url( 'camptix-invoices.css', __FILE__ ), array(), CTX_INV_VER );
-			wp_enqueue_style( 'camptix-invoices-css' );
-		}
-
-		/**
-		 * Register assets on admin side
-		 */
-		static function admin_enqueue_assets() {
-			wp_register_script( 'admin-camptix-invoices', plugins_url( 'camptix-invoices-back.js', __FILE__ ), array( 'jquery' ), CTX_INV_VER, true );
-		}
-
-		/**
-		 * Attendee invoice information
-		 * (also check for missing invoice infos)
-		 */
-		static function attendee_info( $attendee_info ) {
-			global $camptix;
-			if ( ! empty( $_POST['camptix-need-invoice'] ) ) {
-				if ( empty( $_POST['invoice-email'] )
-				|| empty( $_POST['invoice-name'] )
-				|| empty( $_POST['invoice-address'] )
-				|| ! is_email( $_POST['invoice-email'] ) ) {
-					$camptix->error_flag( 'nope' );
-				} else {
-					$attendee_info['invoice-email']   = sanitize_email( $_POST['invoice-email'] );
-					$attendee_info['invoice-name']    = sanitize_text_field( $_POST['invoice-name'] );
-					$attendee_info['invoice-address'] = sanitize_textarea_field( $_POST['invoice-address'] );
-				}
-			}
-			return $attendee_info;
-		}
-
-		/**
-		 * Define custom attributes for an attendee object
-		 */
-		static function attendee_object( $attendee, $attendee_info ) {
-			if ( ! empty( $attendee_info['invoice-email'] ) ) {
-				$attendee->invoice = array(
-					'email'   => $attendee_info['invoice-email'],
-					'name'    => $attendee_info['invoice-name'],
-					'address' => $attendee_info['invoice-address'],
-				);
-			}
-			return $attendee;
-		}
-
-		/**
-		 * Add Invoice meta on an attendee post
-		 */
-		static function add_meta_invoice_on_attendee( $post_id, $attendee ) {
-			if ( ! empty( $attendee->invoice ) ) {
-				update_post_meta( $post_id, 'invoice_metas', $attendee->invoice );
-				global $camptix;
-				$camptix->log( __( 'This attendee requested an invoice.', 'invoices-camptix' ), $post_id, $attendee->invoice );
-			}
-		}
-
-		/**
-		 * My custom errors flags
-		 */
-		static function error_flag() {
-
-			global $camptix;
-			/**
-			 * Hack
-			 */
-			$rp = new ReflectionProperty( 'CampTix_Plugin', 'error_flags' );
-			$rp->setAccessible( true );
-			$error_flags = $rp->getValue( $camptix );
-			if ( ! empty( $error_flags['nope'] ) ) {
-				$camptix->error( __( 'As you have requested an invoice, please fill in the required fields.', 'invoices-camptix' ) );
-			}
-		}
-
-		/**
-		 * Display invoice meta on attendee admin page
-		 */
-		static function add_invoice_meta_on_attendee_metabox( $rows, $post ) {
-			$invoice_meta = get_post_meta( $post->ID, 'invoice_metas', true );
-			if ( ! empty( $invoice_meta ) ) {
-				$rows[] = array( __( 'Requested an invoice', 'invoices-camptix' ), __( 'Oui' ) );
-				$rows[] = array( __( 'Invoice recipient', 'invoices-camptix' ), $invoice_meta['name'] );
-				$rows[] = array( __( 'Invoice to be sent to', 'invoices-camptix' ), $invoice_meta['email'] );
-				$rows[] = array( __( 'Customer address', 'invoices-camptix' ), $invoice_meta['address'] );
-			} else {
-				$rows[] = array( __( 'Requested an invoice', 'invoices-camptix' ), __( 'Non' ) );
-			}
-			return $rows;
-		}
-	}
+	require plugin_dir_path( __FILE__ ) . 'includes/class-camptix-addon-invoices.php';
 	camptix_register_addon( 'CampTix_Addon_Invoices' );
-
 	add_action( 'init', 'register_tix_invoice' );
 }
+add_action( 'camptix_load_addons', 'load_camptix_invoices' );
 
 /**
- * Register invoice CPT
+ * Register invoice CPT.
  */
 function register_tix_invoice() {
 	register_post_type( 'tix_invoice', array(
@@ -390,29 +43,32 @@ function register_tix_invoice() {
 }
 
 /**
- * Display an invoice button
+ * Display an invoice button.
+ *
+ * @param object $post The post.
  */
-add_action( 'post_submitbox_misc_actions', 'ctx_invoice_link' );
 function ctx_invoice_link( $post ) {
 	if ( 'tix_invoice' !== $post->post_type || 'publish' !== $post->post_status ) {
 		return false;
-	}
+	}//end if
 	$invoice_number = get_post_meta( $post->ID, 'invoice_number', true );
 	$auth           = get_post_meta( $post->ID, 'auth', true );
 	vprintf( '<div class="misc-pub-section"><p>%3$s <strong>%4$s</strong></p><a href="%s" class="button button-secondary" target="_blank">%2$s</a></div>',
 		array(
-			admin_url( 'admin-post.php?action=camptix-invoice.get&invoice_id=' . $post->ID . '&invoice_auth=' . $auth ),
+			esc_attr( admin_url( 'admin-post.php?action=camptix-invoice.get&invoice_id=' . $post->ID . '&invoice_auth=' . $auth ) ),
 			esc_html__( 'Print invoice', 'invoices-camptix' ),
 			esc_html__( 'Invoice number', 'invoices-camptix' ),
 			esc_attr( $invoice_number ),
 		)
 	);
 }
+add_action( 'post_submitbox_misc_actions', 'ctx_invoice_link' );
 
 /**
- * Register metabox on invoices
+ * Register metabox on invoices.
+ *
+ * @param object $post The post.
  */
-add_action( 'add_meta_boxes_tix_invoice', 'ctx_register_invoice_metabox' );
 function ctx_register_invoice_metabox( $post ) {
 	if ( 'publish' === $post->post_status ) {
 		add_meta_box(
@@ -432,15 +88,26 @@ function ctx_register_invoice_metabox( $post ) {
 			'normal',
 			'high'
 		);
-	}
+	}//end if
 }
+add_action( 'add_meta_boxes_tix_invoice', 'ctx_register_invoice_metabox' );
 
 /**
- * Metabox for edible invoice (not published)
+ * Metabox for edible invoice (not published).
+ *
+ * @param object $args The args.
  */
 function ctx_invoice_metabox_editable( $args ) {
 	$order = get_post_meta( $args->ID, 'original_order', true );
 	$metas = get_post_meta( $args->ID, 'invoice_metas', true );
+
+	if ( ! is_array( $order ) ) {
+		$order = array();
+	}//end if
+	if ( ! is_array( $metas ) ) {
+		$metas = array();
+	}//end if
+
 	wp_nonce_field( 'edit-invoice-' . get_current_user_id() . '-' . $args->ID, 'edit-invoice' );
 	echo '<h3>' . esc_html__( 'Order details', 'invoices-camptix' ) . '</h3>';
 	$item_line = '<tr>
@@ -452,25 +119,35 @@ function ctx_invoice_metabox_editable( $args ) {
 		<th>%1$s</th>
 		<th>%2$s</th>
 		<th>%3$s</th>
-		</tr></thead><tbody>', array(
-			__( 'Title', 'invoices-camptix' ),
-			__( 'Unit price', 'invoices-camptix' ),
-			__( 'Quantity', 'invoices-camptix' ),
-	) );
+		</tr></thead><tbody>',
+		array(
+			esc_html__( 'Title', 'invoices-camptix' ),
+			esc_html__( 'Unit price', 'invoices-camptix' ),
+			esc_html__( 'Quantity', 'invoices-camptix' ),
+		)
+	);
+
+	if ( ! is_array( $order['items'] ) ) {
+		$order['items'] = array();
+	}//end if
 	foreach ( $order['items'] as $k => $item ) {
-		vprintf( $item_line, array(
-			$k,
-			$item['name'],
-			$item['price'],
-			$item['quantity'],
-			) );
-	}
-	vprintf( $item_line, array(
-		count( $order['items'] ) + 1,
-		'',
-		'',
-		'',
-		) );
+		vprintf( $item_line, // @codingStandardsIgnoreLine
+			array(
+				esc_attr( $k ),
+				esc_attr( $item['name'] ),
+				esc_attr( $item['price'] ),
+				esc_attr( $item['quantity'] ),
+			)
+		);
+	}//end foreach
+	vprintf( $item_line, // @codingStandardsIgnoreLine
+		array(
+			count( $order['items'] ) + 1,
+			'',
+			'',
+			'',
+		)
+	);
 	echo '</tbody></table>';
 	vprintf( '<table class="form-table">
 		<tr><th scope="row"><label for="order[total]">%1$s</label></th>
@@ -486,7 +163,8 @@ function ctx_invoice_metabox_editable( $args ) {
 		<td><input name="invoice_metas[email]" id="invoice_metas[email]" value="%6$s" type="email" class="widefat"/><td></tr>
 		<tr><th scope="row"><label for="invoice_metas[address]">%7$s</label></th>
 		<td><textarea name="invoice_metas[address]" id="invoice_metas[address]" class="widefat">%8$s</textarea><td></tr>
-		</table>', array(
+		</table>',
+		array(
 			esc_html__( 'Total amount', 'invoices-camptix' ),
 			esc_attr( $order['total'] ),
 			esc_html__( 'Customer', 'invoices-camptix' ),
@@ -495,11 +173,14 @@ function ctx_invoice_metabox_editable( $args ) {
 			esc_attr( $metas['email'] ),
 			esc_html__( 'Customer Address', 'invoices-camptix' ),
 			esc_textarea( $metas['address'] ),
-		) );
+		)
+	);
 }
 
 /**
- * Metabox for published invoices
+ * Metabox for published invoices.
+ *
+ * @param object $args The args.
  */
 function ctx_invoice_metabox_sent( $args ) {
 	$order = get_post_meta( $args->ID, 'original_order', true );
@@ -514,18 +195,22 @@ function ctx_invoice_metabox_sent( $args ) {
 		<th>%1$s</th>
 		<th>%2$s</th>
 		<th>%3$s</th>
-		</tr></thead><tbody>', array(
-			__( 'Title', 'invoices-camptix' ),
-			__( 'Unit price', 'invoices-camptix' ),
-			__( 'Quantity', 'invoices-camptix' ),
-	) );
+		</tr></thead><tbody>',
+		array(
+			esc_html__( 'Title', 'invoices-camptix' ),
+			esc_html__( 'Unit price', 'invoices-camptix' ),
+			esc_html__( 'Quantity', 'invoices-camptix' ),
+		)
+	);
 	foreach ( $order['items'] as $k => $item ) {
-		vprintf( $item_line, array(
-			$item['name'],
-			$item['price'],
-			$item['quantity'],
-			) );
-	}
+		vprintf( $item_line, // @codingStandardsIgnoreLine
+			array(
+				esc_attr( $item['name'] ),
+				esc_attr( $item['price'] ),
+				esc_attr( $item['quantity'] ),
+			)
+		);
+	}//end foreach
 	echo '</tbody></table>';
 	vprintf( '<table class="form-table"><tr><th scope="row">%1$s</th>
 		<td>%2$.2f</td></tr>
@@ -535,7 +220,8 @@ function ctx_invoice_metabox_sent( $args ) {
 		<td>%6$s<td></tr>
 		<tr><th scope="row">%7$s</th>
 		<td>%8$s<td></tr>
-		</table>', array(
+		</table>',
+		array(
 			esc_html__( 'Total amount', 'invoices-camptix' ),
 			esc_html( $order['total'] ),
 			esc_html__( 'Customer', 'invoices-camptix' ),
@@ -544,56 +230,65 @@ function ctx_invoice_metabox_sent( $args ) {
 			esc_html( $metas['email'] ),
 			esc_html__( 'Customer Address', 'invoices-camptix' ),
 			wp_kses( nl2br( $metas['address'] ), array( 'br' => true ) ),
-		) );
+		)
+	);
 }
 
 /**
- * Save invoice metabox
+ * Save invoice metabox.
+ *
+ * @param int $post_id The post ID.
  */
-add_action( 'save_post_tix_invoice', 'ctx_save_invoice_details', 10, 2 );
-function ctx_save_invoice_details( $post_id, $post ) {
+function ctx_save_invoice_details( $post_id ) {
 	if ( ! isset( $_POST['edit-invoice'] ) ) {
 		return;
-	}
+	}//end if
+
 	check_admin_referer( 'edit-invoice-' . $_POST['user_ID'] . '-' . $_POST['post_ID'], 'edit-invoice' );
-	// Filter items to save
+
+	// Filter items to save.
 	$order = $_POST['order'];
 	$items = array();
 	foreach ( $order['items'] as $item ) {
 		if ( ! empty( $item['name'] ) && ! empty( $item['quantity'] ) ) {
 			$items[] = $item;
-		}
-	}
+		}//end if
+	}//end foreach
 	$order['items'] = $items;
 	update_post_meta( $post_id, 'original_order', $order );
 	update_post_meta( $post_id, 'invoice_metas', $_POST['invoice_metas'] );
 }
+add_action( 'save_post_tix_invoice', 'ctx_save_invoice_details', 10, 2 );
 
 /**
  * Assign invoice number on status transitions to PUBLISH
+ *
+ * @param int $id The id.
  */
-add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
-function ctx_assign_invoice_number( $id, $post ) {
+function ctx_assign_invoice_number( $id ) {
 	if ( ! get_post_meta( $id, 'invoice_number', true ) ) {
 		$number = CampTix_Addon_Invoices::create_invoice_number();
 		update_post_meta( $id, 'invoice_number', $number );
-	}
+	}//end if
 }
+add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
 
 /**
- * Disallow an invoice to be edit after publish
+ * Disallow an invoice to be edit after publish.
+ *
+ * @param int $post_id The post id.
  */
-add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
-function ctx_dissallow_invoice_edit( $post_id, $data ) {
+function ctx_dissallow_invoice_edit( $post_id ) {
 	if ( 'tix_invoice' !== get_post_type( $post_id ) ) {
 		return;
-	}
+	}//end if
 
 	$status = get_post_status( $post_id );
-    if ( $status === 'publish' ) {
-		wp_die( __( 'Published invoices cannot be edited.', 'invoices-camptix' ) );
-	}
+	if ( 'publish' === $status ) {
+		wp_die( esc_html__( 'Published invoices cannot be edited.', 'invoices-camptix' ) );
+	}//end if
 }
+add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
 
 /**
  * Register REST API endpoint to serve invoice details form
@@ -605,78 +300,103 @@ add_action( 'rest_api_init', function () {
 	) );
 } );
 
+/**
+ * Invoice form generator.
+ */
 function ctx_invoice_form() {
 	$fields = array();
-	$fields['main' ]  = '<input type="checkbox" value="1" name="camptix-need-invoice" id="camptix-need-invoice"/> <label for="camptix-need-invoice">' . __( 'I need an invoice', 'invoices-camptix' ) . '</label>';
+
+	$fields['main']     = '<input type="checkbox" value="1" name="camptix-need-invoice" id="camptix-need-invoice"/> <label for="camptix-need-invoice">' . __( 'I need an invoice', 'invoices-camptix' ) . '</label>';
 	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-email">' . __( 'Email for the invoice to be sent to', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
 		<td class="tix-right"><input type="text" name="invoice-email" id="invoice-email" pattern="^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+.[a-zA-Z0-9-.]+$"></td>';
 	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-name">' . __( 'Name or organisation that the invoice should be made out to', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
 		<td class="tix-right"><input type="text" name="invoice-name" id="invoice-name"></td>';
 	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-address">' . __( 'Street address', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
 		<td class="tix-right"><textarea name="invoice-address" id="invoice-address" rows="2"></textarea></td>';
-	$fields = apply_filters( 'camptix-invoices/invoice-details-form-fields', $fields );
-	$fields_formatted = $fields['main'] . '<table class="camptix-invoice-details tix_tickets_table tix_invoice_table"><tbody><tr>' . implode( '</tr><tr>', $fields[ 'hidden'] ) . '</tr></tbody></table>';
-	$form = apply_filters( 'camptix-invoice/invoice-details-form', '<div class="camptix-invoice-toggle-wrapper">' . $fields_formatted . '</div>', $fields );
+
+	$fields = apply_filters( 'camptix_invoices_invoice_details_form_fields', $fields );
+
+	$fields_formatted = $fields['main'] . '<table class="camptix-invoice-details tix_tickets_table tix_invoice_table"><tbody><tr>' . implode( '</tr><tr>', $fields['hidden'] ) . '</tr></tbody></table>';
+
+	$form = apply_filters( 'camptix_invoice_invoice_details_form', '<div class="camptix-invoice-toggle-wrapper">' . $fields_formatted . '</div>', $fields );
+
 	wp_send_json( array( 'form' => $form ) );
 }
 
 /**
- * Add an admin_post endpoint to get an invoice
- * @todo générer la facture
+ * Add an admin_post endpoint to get an invoice.
+ *
+ * @todo generate the invoice
  */
-add_action( 'admin_post_nopriv_camptix-invoice.get', 'ctx_download_invoice' );
-add_action( 'admin_post_camptix-invoice.get', 'ctx_download_invoice' );
 function ctx_download_invoice() {
-	if ( ! $invoice = ctx_can_get_invoice() ) {
-		wp_die( __( 'You do not have access to this invoice', 'invoices-camptix' ) );
-	}
+	$invoice = ctx_can_get_invoice();
+	if ( ! $invoice ) {
+		wp_die( esc_html__( 'You do not have access to this invoice', 'invoices-camptix' ) );
+	}//end if
 	ctx_get_invoice( $invoice );
 }
+add_action( 'admin_post_nopriv_camptix-invoice.get', 'ctx_download_invoice' );
+add_action( 'admin_post_camptix-invoice.get', 'ctx_download_invoice' );
 
 /**
- * Generate a PDF invoice
+ * Generate a PDF invoice.
+ *
+ * @param int    $invoice The invoice id.
+ * @param string $target  The target.
  */
 function ctx_get_invoice( $invoice, $target = 'D' ) {
-	$obj = get_post( $invoice );
-	$order = get_post_meta( $invoice, 'original_order', true );
-	$metas = get_post_meta( $invoice, 'invoice_metas', true );
+	$obj            = get_post( $invoice );
+	$order          = get_post_meta( $invoice, 'original_order', true );
+	$metas          = get_post_meta( $invoice, 'invoice_metas', true );
 	$invoice_number = sanitize_title( get_post_meta( $invoice, 'invoice_number', true ) );
-	$opt = get_option( 'camptix_options' );
-	$currency = esc_html( $opt['currency'] );
-	require( 'fpdf/facturePDF.php' );
-	// #1 Initialize the basic information
+	$opt            = get_option( 'camptix_options' );
+	$currency       = esc_html( $opt['currency'] );
+
+	require 'admin/lib/fpdf/facturePDF.php';
+
+	// #1 Initialize the basic information.
 	//
-	// address of the company issuing the invoice
-	$address = __( 'Organizer:', 'invoices-camptix' ) . PHP_EOL . $opt['invoice-company'];
+	// address of the company issuing the invoice.
+	$address   = __( 'Organizer:', 'invoices-camptix' ) . PHP_EOL . $opt['invoice-company'];
 	$thank_you = $opt['invoice-thankyou'];
-	// customer address
-	$customerAddress = implode( PHP_EOL, array( $metas['name'], $metas['address'], $metas['email'] ) );
-	// CGV
+
+	// customer address.
+	$customer_address = implode( PHP_EOL, array( $metas['name'], $metas['address'], $metas['email'] ) );
+
+	// CGV.
 	$cgv = $opt['invoice-tac'];
-	// initialize the object invoicePDF
-	$pdf = new facturePDF( $address, $customerAddress, $cgv . PHP_EOL . $thank_you );
-	// set the logo
+
+	// initialize the object invoicePDF.
+	$pdf = new facturePDF( $address, $customer_address, $cgv . PHP_EOL . $thank_you );
+
+	// set the logo.
 	$logo_url = wp_get_attachment_url( $opt['invoice-logo'] );
 	$pdf->setLogo( $logo_url );
-	// product header
+
+	// product header.
 	$pdf->productHeaderAddRow( __( 'Title', 'invoices-camptix' ), 45, 'L' );
 	$pdf->productHeaderAddRow( __( 'Unit price', 'invoices-camptix' ), 45, 'C' );
 	$pdf->productHeaderAddRow( __( 'Quantity', 'invoices-camptix' ), 45, 'C' );
 	$pdf->productHeaderAddRow( __( 'Total', 'invoices-camptix' ), 45, 'C' );
-	// header of the totals
+
+	// header of the totals.
 	$pdf->totalHeaderAddRow( 30, 'L' );
 	$pdf->totalHeaderAddRow( 30, 'C' );
-	// custom element
+
+	// custom element.
 	$pdf->elementAdd( '', 'traitEnteteProduit', 'content' );
 	$pdf->elementAdd( '', 'traitBas', 'footer' );
 
 	// #2 Create an invoice
 	//
-	// invoice title, date, text before the page number
-	$invoice_title = sprintf( __( 'Invoice #%s', 'invoices-camptix'), $invoice_number );
+	// invoice title, date, text before the page number.
+	// translators: invoice number
+	$invoice_title = sprintf( __( 'Invoice #%s', 'invoices-camptix' ), $invoice_number );
+
 	// TODO: Add a setting to allow the date format to be changed.
 	$pdf->initFacture( $invoice_title, date_i18n( 'd F Y', strtotime( $obj->post_date ) ), '' );
-	// product
+
+	// product.
 	$items = $order['items'];
 	foreach ( $items as $item ) {
 		$item_title   = $item['name'];
@@ -684,32 +404,33 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 		$item_quatity = $item['quantity'];
 		$item_total   = number_format_i18n( $item_price * $item_quatity, 2 );
 		$pdf->productAdd( array( $item_title, $item_price, $item_quatity, $item_total ) );
-	}
+	}//end foreach
 
-	// total line
+	// total line.
 	$total = number_format_i18n( $order['total'], 2 ) . ' ' . $currency;
 	$pdf->totalAdd( array( __( 'Total amount:', 'invoices-camptix' ), $total ) );
 
 	// #3 Imports the template
 	//
 	$template = locate_template( 'template-invoice.php' ) ? locate_template( 'template-invoice.php' ) : 'fpdf/template.php';
-	require( $template );
+	require $template;
 
 	// #4 Finalization
 	// build the PDF
 	$pdf->buildPDF();
-	// download the file
+
+	// download the file.
 	$invoice_title = sanitize_title( __( 'invoice-', 'invoices-camptix' ) . $invoice_number ) . '.pdf';
-	if ( in_array( $target, array( 'D', 'I' ) ) ) {
+	if ( in_array( $target, array( 'D', 'I' ), true ) ) {
 		$pdf->Output( $invoice_title, $target );
 		die();
 	} else {
-		$upload = wp_upload_dir();
+		$upload     = wp_upload_dir();
 		$upload_dir = $upload['basedir'];
 		$upload_dir = $upload_dir . '/camptix-invoices';
 		if ( ! is_dir( $upload_dir ) ) {
 			mkdir( $upload_dir, 0700 );
-			foreach( array(
+			foreach ( array(
 				'.htaccess'  => 'Deny from all',
 				'index.html' => '',
 			) as $file => $content ) {
@@ -717,13 +438,13 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 				if ( $file_handle ) {
 					fwrite( $file_handle, $content );
 					fclose( $file_handle );
-				}
-			}
-		}
+				}//end if
+			}//end foreach
+		}//end if
 		$path = $upload_dir . '/' . $invoice_title;
 		$pdf->Output( $path, 'F' );
 		return $path;
-	}
+	}//end if
 }
 
 /**
@@ -732,13 +453,13 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 function ctx_can_get_invoice() {
 	if ( empty( $_REQUEST['invoice_id'] ) || empty( $_REQUEST['invoice_auth'] ) ) {
 		return false;
-	}
+	}//end if
 	if ( 'tix_invoice' !== get_post_type( $_REQUEST['invoice_id'] ) ) {
 		return false;
-	}
+	}//end if
 	$auth = get_post_meta( (int) $_REQUEST['invoice_id'], 'auth', true );
 	if ( $auth !== $_REQUEST['invoice_auth'] ) {
 		return false;
-	}
+	}//end if
 	return (int) $_REQUEST['invoice_id'];
 }
