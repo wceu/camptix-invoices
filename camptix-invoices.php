@@ -367,7 +367,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$opt            = get_option( 'camptix_options' );
 	$currency       = esc_html( $opt['currency'] );
 
-	require 'admin/lib/fpdf/facturePDF.php';
+	require 'includes/lib/fpdf/facturePDF.php';
 
 	// #1 Initialize the basic information.
 	//
@@ -413,6 +413,9 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 
 	// product.
 	$items = $order['items'];
+	if ( ! is_array( $items ) ) {
+		$items = array();
+	}//end if
 	foreach ( $items as $item ) {
 		$item_title   = $item['name'];
 		$item_price   = number_format_i18n( $item['price'], 2 );
@@ -427,7 +430,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 
 	// #3 Imports the template
 	//
-	$template = locate_template( 'template-invoice.php' ) ? locate_template( 'template-invoice.php' ) : 'fpdf/template.php';
+	$template = locate_template( 'template-invoice.php' ) ? locate_template( 'template-invoice.php' ) : 'includes/lib/fpdf/template.php';
 	require $template;
 
 	// #4 Finalization
@@ -466,6 +469,9 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
  * Can a request print an invoice ?
  */
 function ctx_can_get_invoice() {
+	if ( current_user_can( 'administrator' ) ) {
+		return true;
+	}//end if
 	if ( empty( $_REQUEST['invoice_id'] ) || empty( $_REQUEST['invoice_auth'] ) ) {
 		return false;
 	}//end if
