@@ -468,9 +468,6 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
  * Can a request print an invoice ?
  */
 function ctx_can_get_invoice() {
-	if ( current_user_can( 'administrator' ) ) {
-		return true;
-	}//end if
 	if ( empty( $_REQUEST['invoice_id'] ) || empty( $_REQUEST['invoice_auth'] ) ) {
 		return false;
 	}//end if
