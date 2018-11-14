@@ -391,7 +391,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	public static function add_invoice_meta_on_attendee_metabox( $rows, $post ) {
 		$invoice_meta = get_post_meta( $post->ID, 'invoice_metas', true );
 		if ( ! empty( $invoice_meta ) ) {
-			$rows[] = array( __( 'Requested an invoice', 'invoices-camptix' ), __( 'Oui' ) );
+			$rows[] = array( __( 'Requested an invoice', 'invoices-camptix' ), __( 'Yes', 'invoices-camptix' ) );
 			$rows[] = array( __( 'Invoice recipient', 'invoices-camptix' ), $invoice_meta['name'] );
 			$rows[] = array( __( 'Invoice to be sent to', 'invoices-camptix' ), $invoice_meta['email'] );
 			$rows[] = array( __( 'Customer address', 'invoices-camptix' ), $invoice_meta['address'] );
