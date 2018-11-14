@@ -40,7 +40,6 @@ function register_tix_invoice() {
 			'name_admin_bar' => __( 'Invoice', 'invoices-camptix' ),
 			'archives'       => __( 'Invoice Archives', 'invoices-camptix' ),
 			'attributes'     => __( 'Invoice Attributes', 'invoices-camptix' ),
-			'all_items'      => __( 'All Invoices', 'invoices-camptix' ),
 			'add_new_item'   => __( 'Add New Invoice', 'invoices-camptix' ),
 			'add_new'        => __( 'Add New', 'invoices-camptix' ),
 			'new_item'       => __( 'New Invoice', 'invoices-camptix' ),
