@@ -141,7 +141,7 @@ function ctx_invoice_metabox_editable( $args ) {
 		)
 	);
 
-	if ( ! is_array( $order['items'] ) ) {
+	if ( empty( $order['items'] ) || ! is_array( $order['items'] ) ) {
 		$order['items'] = array();
 	}//end if
 	foreach ( $order['items'] as $k => $item ) {
@@ -180,13 +180,13 @@ function ctx_invoice_metabox_editable( $args ) {
 		</table>',
 		array(
 			esc_html__( 'Total amount', 'invoices-camptix' ),
-			esc_attr( $order['total'] ),
+			esc_attr( empty( $order['total'] ) ? '0' : $order['total'] ),
 			esc_html__( 'Customer', 'invoices-camptix' ),
-			esc_attr( $metas['name'] ),
+			esc_attr( empty( $metas['name'] ) ? '' : $metas['name'] ),
 			esc_html__( 'Contact email', 'invoices-camptix' ),
-			esc_attr( $metas['email'] ),
+			esc_attr( empty( $metas['email'] ) ? '' : $metas['email'] ),
 			esc_html__( 'Customer Address', 'invoices-camptix' ),
-			esc_textarea( $metas['address'] ),
+			esc_textarea( empty( $metas['address'] ) ? '' : $metas['address'] ),
 		)
 	);
 }
