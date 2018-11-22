@@ -288,6 +288,18 @@ function ctx_assign_invoice_number( $id ) {
 add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
 
 /**
+ * Assign invoice auth on status transitions to PUBLISH
+ *
+ * @param int $id The id.
+ */
+function ctx_assign_invoice_auth( $id ) {
+	if ( ! get_post_meta( $id, 'auth', true ) ) {
+		update_post_meta( $id, 'auth', uniqid() );
+	}//end if
+}
+add_action( 'publish_tix_invoice', 'ctx_assign_invoice_auth', 10, 2 );
+
+/**
  * Disallow an invoice to be edit after publish.
  *
  * @param int $post_id The post id.
