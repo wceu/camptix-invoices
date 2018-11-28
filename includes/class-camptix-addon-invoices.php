@@ -57,19 +57,28 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$opt = get_option( 'camptix_options' );
 		add_settings_section( 'invoice', __( 'Invoices settings', 'invoices-camptix' ), '__return_false', 'camptix_options' );
 		global $camptix;
+
 		$camptix->add_settings_field_helper( 'invoice-new-year-reset', __( 'Yearly reset', 'invoices-camptix' ), 'field_yesno', 'invoice',
 			// translators: %1$s is a date.
 			sprintf( __( 'Invoice numbers are prefixed with the year, and will be reset on the 1st of January (e.g. %1$s-125)', 'invoices-camptix' ), date( 'Y' ) )
 		);
+
+		$camptix->add_settings_field_helper( 'invoice-vat-number', __( 'VAT number', 'invoices-camptix' ), 'field_yesno', 'invoice',
+			// translators: %1$s is a date.
+			sprintf( __( 'Add a "VAT Number" field to the invoice request form', 'invoices-camptix' ), date( 'Y' ) )
+		);
+
 		add_settings_field( 'invoice-current-number', __( 'Next invoice', 'invoices-camptix' ), array( __CLASS__, 'current_number_callback' ), 'camptix_options', 'invoice', array(
 			'id'     => 'invoice-current-number',
 			'value'  => isset( $opt['invoice-current-number'] ) ? $opt['invoice-current-number'] : 1,
 			'yearly' => isset( $opt['invoice-new-year-reset'] ) ? $opt['invoice-new-year-reset'] : false,
 		) );
+
 		add_settings_field( 'invoice-logo', __( 'Logo', 'invoices-camptix' ), array( __CLASS__, 'type_file_callback' ), 'camptix_options', 'invoice', array(
 			'id'    => 'invoice-logo',
 			'value' => ! empty( $opt['invoice-logo'] ) ? $opt['invoice-logo'] : '',
 		) );
+
 		$camptix->add_settings_field_helper( 'invoice-company', __( 'Company address', 'invoices-camptix' ), 'field_textarea', 'invoice' );
 		$camptix->add_settings_field_helper( 'invoice-tac', __( 'Terms and Conditions', 'invoices-camptix' ), 'field_textarea', 'invoice' );
 		$camptix->add_settings_field_helper( 'invoice-thankyou', __( 'Note below invoice total', 'invoices-camptix' ), 'field_textarea', 'invoice' );
@@ -128,6 +137,9 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	public static function validate_options( $output, $input ) {
 		if ( isset( $input['invoice-new-year-reset'] ) ) {
 			$output['invoice-new-year-reset'] = (int) $input['invoice-new-year-reset'];
+		}//end if
+		if ( isset( $input['invoice-vat-number'] ) ) {
+			$output['invoice-vat-number'] = (int) $input['invoice-vat-number'];
 		}//end if
 		if ( ! empty( $input['invoice-current-number'] ) ) {
 			$output['invoice-current-number'] = (int) $input['invoice-current-number'];
@@ -329,6 +341,11 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 				$attendee_info['invoice-email']   = sanitize_email( $_POST['invoice-email'] );
 				$attendee_info['invoice-name']    = sanitize_text_field( $_POST['invoice-name'] );
 				$attendee_info['invoice-address'] = sanitize_textarea_field( $_POST['invoice-address'] );
+
+				$opt = get_option( 'camptix_options' );
+				if ( ! empty( $opt['invoice-vat-number'] ) ) {
+					$attendee_info['invoice-vat-number'] = sanitize_text_field( $_POST['invoice-vat-number'] );
+				}//end if
 			}//end if
 		}//end if
 		return $attendee_info;
@@ -347,6 +364,11 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 				'name'    => $attendee_info['invoice-name'],
 				'address' => $attendee_info['invoice-address'],
 			);
+
+			$opt = get_option( 'camptix_options' );
+			if ( ! empty( $opt['invoice-vat-number'] ) ) {
+				$attendee->invoice['vat-number'] = $attendee_info['invoice-vat-number'];
+			}//end if
 		}//end if
 		return $attendee;
 	}
@@ -395,8 +417,14 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 			$rows[] = array( __( 'Invoice recipient', 'invoices-camptix' ), $invoice_meta['name'] );
 			$rows[] = array( __( 'Invoice to be sent to', 'invoices-camptix' ), $invoice_meta['email'] );
 			$rows[] = array( __( 'Customer address', 'invoices-camptix' ), $invoice_meta['address'] );
+
+			$opt = get_option( 'camptix_options' );
+			if ( ! empty( $opt['invoice-vat-number'] ) ) {
+				$rows[] = array( __( 'VAT number', 'invoices-camptix' ), $invoice_meta['vat-number'] );
+			}//end if
+
 		} else {
-			$rows[] = array( __( 'Requested an invoice', 'invoices-camptix' ), __( 'Non' ) );
+			$rows[] = array( __( 'Requested an invoice', 'invoices-camptix' ), __( 'No', 'invoices-camptix' ) );
 		}//end if
 		return $rows;
 	}

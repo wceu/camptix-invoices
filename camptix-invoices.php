@@ -163,32 +163,44 @@ function ctx_invoice_metabox_editable( $args ) {
 		)
 	);
 	echo '</tbody></table>';
-	vprintf( '<table class="form-table">
-		<tr><th scope="row"><label for="order[total]">%1$s</label></th>
-		<td><input
-		type="number"
-		min="0"
-		value="%2$.2f"
-		name="order[total]"
-		id="order[total]"/></td></tr>
-		<tr><th scope="row"><label for="invoice_metas[name]">%3$s</label></th>
-		<td><input name="invoice_metas[name]" id="invoice_metas[name]" value="%4$s" type="texte" class="widefat"/><td></tr>
-		<tr><th scope="row"><label for="invoice_metas[email]">%5$s</label></th>
-		<td><input name="invoice_metas[email]" id="invoice_metas[email]" value="%6$s" type="email" class="widefat"/><td></tr>
-		<tr><th scope="row"><label for="invoice_metas[address]">%7$s</label></th>
-		<td><textarea name="invoice_metas[address]" id="invoice_metas[address]" class="widefat">%8$s</textarea><td></tr>
-		</table>',
-		array(
-			esc_html__( 'Total amount', 'invoices-camptix' ),
-			esc_attr( empty( $order['total'] ) ? '0' : $order['total'] ),
-			esc_html__( 'Customer', 'invoices-camptix' ),
-			esc_attr( empty( $metas['name'] ) ? '' : $metas['name'] ),
-			esc_html__( 'Contact email', 'invoices-camptix' ),
-			esc_attr( empty( $metas['email'] ) ? '' : $metas['email'] ),
-			esc_html__( 'Customer Address', 'invoices-camptix' ),
-			esc_textarea( empty( $metas['address'] ) ? '' : $metas['address'] ),
-		)
+	$table_content = '<tr><th scope="row"><label for="order[total]">%1$s</label></th>
+	<td><input
+	type="number"
+	min="0"
+	value="%2$.2f"
+	name="order[total]"
+	id="order[total]"/></td></tr>
+	<tr><th scope="row"><label for="invoice_metas[name]">%3$s</label></th>
+	<td><input name="invoice_metas[name]" id="invoice_metas[name]" value="%4$s" type="text" class="widefat"/><td></tr>
+	<tr><th scope="row"><label for="invoice_metas[email]">%5$s</label></th>
+	<td><input name="invoice_metas[email]" id="invoice_metas[email]" value="%6$s" type="email" class="widefat"/><td></tr>
+	<tr><th scope="row"><label for="invoice_metas[address]">%7$s</label></th>
+	<td><textarea name="invoice_metas[address]" id="invoice_metas[address]" class="widefat">%8$s</textarea><td></tr>';
+
+	$opt = get_option( 'camptix_options' );
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		$table_content .= '<tr><th scope="row"><label for="invoice_metas[vat-number]">%9$s</label></th>
+		<td><input name="invoice_metas[vat-number]" id="invoice_metas[vat-number]" value="%10$s" type="text" class="widefat"/><td></tr>';
+	}//end if
+
+	$table = '<table class="form-table">' . $table_content . '</table>';
+	$args  = array(
+		esc_html__( 'Total amount', 'invoices-camptix' ),
+		esc_attr( empty( $order['total'] ) ? '0' : $order['total'] ),
+		esc_html__( 'Customer', 'invoices-camptix' ),
+		esc_attr( empty( $metas['name'] ) ? '' : $metas['name'] ),
+		esc_html__( 'Contact email', 'invoices-camptix' ),
+		esc_attr( empty( $metas['email'] ) ? '' : $metas['email'] ),
+		esc_html__( 'Customer Address', 'invoices-camptix' ),
+		esc_textarea( empty( $metas['address'] ) ? '' : $metas['address'] ),
 	);
+
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		$args[] = esc_html__( 'VAT number', 'invoices-camptix' );
+		$args[] = esc_textarea( empty( $metas['vat-number'] ) ? '' : $metas['vat-number'] );
+	}//end if
+
+	vprintf( $table, $args ); //@codingStandardsIgnoreLine
 }
 
 /**
@@ -226,26 +238,39 @@ function ctx_invoice_metabox_sent( $args ) {
 		);
 	}//end foreach
 	echo '</tbody></table>';
-	vprintf( '<table class="form-table"><tr><th scope="row">%1$s</th>
+	$table_content = '<tr><th scope="row">%1$s</th>
 		<td>%2$.2f</td></tr>
 		<tr><th scope="row">%3$s</th>
 		<td>%4$s<td></tr>
 		<tr><th scope="row">%5$s</th>
 		<td>%6$s<td></tr>
 		<tr><th scope="row">%7$s</th>
-		<td>%8$s<td></tr>
-		</table>',
-		array(
-			esc_html__( 'Total amount', 'invoices-camptix' ),
-			esc_html( $order['total'] ),
-			esc_html__( 'Customer', 'invoices-camptix' ),
-			esc_html( $metas['name'] ),
-			esc_html__( 'Contact email', 'invoices-camptix' ),
-			esc_html( $metas['email'] ),
-			esc_html__( 'Customer Address', 'invoices-camptix' ),
-			wp_kses( nl2br( $metas['address'] ), array( 'br' => true ) ),
-		)
+		<td>%8$s<td></tr>';
+
+	$opt = get_option( 'camptix_options' );
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		$table_content .= '<tr><th scope="row">%9$s</th>
+		<td>%10$s<td></tr>';
+	}//end if
+
+	$table = '<table class="form-table">' . $table_content . '</table>';
+	$args  = array(
+		esc_html__( 'Total amount', 'invoices-camptix' ),
+		esc_html( $order['total'] ),
+		esc_html__( 'Customer', 'invoices-camptix' ),
+		esc_html( $metas['name'] ),
+		esc_html__( 'Contact email', 'invoices-camptix' ),
+		esc_html( $metas['email'] ),
+		esc_html__( 'Customer Address', 'invoices-camptix' ),
+		wp_kses( nl2br( $metas['address'] ), array( 'br' => true ) ),
 	);
+
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		$args[] = esc_html__( 'VAT number', 'invoices-camptix' );
+		$args[] = esc_html( $metas['vat-number'] );
+	}//end if
+
+	vprintf( $table, $args ); //@codingStandardsIgnoreLine
 }
 
 /**
@@ -330,6 +355,7 @@ add_action( 'rest_api_init', function () {
  * Invoice form generator.
  */
 function ctx_invoice_form() {
+
 	$fields = array();
 
 	$fields['main']     = '<input type="checkbox" value="1" name="camptix-need-invoice" id="camptix-need-invoice"/> <label for="camptix-need-invoice">' . __( 'I need an invoice', 'invoices-camptix' ) . '</label>';
@@ -339,6 +365,12 @@ function ctx_invoice_form() {
 		<td class="tix-right"><input type="text" name="invoice-name" id="invoice-name"></td>';
 	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-address">' . __( 'Street address', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
 		<td class="tix-right"><textarea name="invoice-address" id="invoice-address" rows="2"></textarea></td>';
+
+	$opt = get_option( 'camptix_options' );
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		$fields['hidden'][] = '<td class="tix-left"><label for="invoice-vat-number">' . __( 'VAT number', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
+			<td class="tix-right"><input type="text" name="invoice-vat-number" id="invoice-vat-number"></td>';
+	}//end if
 
 	$fields = apply_filters( 'camptix_invoices_invoice_details_form_fields', $fields );
 
@@ -387,7 +419,13 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$thank_you = $opt['invoice-thankyou'];
 
 	// customer address.
-	$customer_address = implode( PHP_EOL, array( $metas['name'], $metas['address'], $metas['email'] ) );
+	$args = array( $metas['name'], $metas['address'], $metas['email'] );
+	$opt  = get_option( 'camptix_options' );
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		array_unshift( $args, $metas['vat-number'] );
+	}//end if
+
+	$customer_address = implode( PHP_EOL, $args );
 
 	// CGV.
 	$cgv = $opt['invoice-tac'];
