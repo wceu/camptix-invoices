@@ -1,5 +1,5 @@
 === Camptix Invoices ===
-Contributors: willybahuaud, simonjanin, iceablemedia, avillegasn
+Contributors: willybahuaud, simonjanin, iceable, avillegasn, tfrommen
 Tags: camptix, invoice, event, organizer, tickets, notes
 Requires at least: 3.0.1
 Tested up to: 4.9.2

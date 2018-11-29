@@ -278,7 +278,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$opt         = get_option( 'camptix_options' );
 
 		/* translators: The name of the event */
-		$subject = apply_filters( 'camptix_invoices_mailsubjet', sprintf( __( 'Your invoice – %s', 'invoices-camptix' ), $opt['event_name'] ), $opt['event_name'] );
+		$subject = apply_filters( 'camptix_invoices_mailsubjet', sprintf( __( 'Your invoice - %s', 'invoices-camptix' ), $opt['event_name'] ), $opt['event_name'] );
 		$from    = apply_filters( 'camptix_invoices_mailfrom', get_option( 'admin_email' ) );
 		$headers = apply_filters( 'camptix_invoices_mailheaders', array(
 			"From: {$opt['event_name']} <{$from}>",
@@ -287,7 +287,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$message = array(
 			__( 'Hello,', 'invoices-camptix' ),
 			// translators: event name.
-			sprintf( __( 'As requested during your purchase, please find attached an invoice for your tickets to « %s ».', 'invoices-camptix' ), sanitize_text_field( $opt['event_name'] ) ),
+			sprintf( __( 'As requested during your purchase, please find attached an invoice for your tickets to "%s".', 'invoices-camptix' ), sanitize_text_field( $opt['event_name'] ) ),
 			// translators: email.
 			sprintf( __( 'Please let us know if we can be of any further assistance at %s.', 'invoices-camptix' ), $from ),
 			__( 'Kind regards', 'invoices-camptix' ),

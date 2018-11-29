@@ -17,6 +17,14 @@ define( 'CTX_INV_URL', untrailingslashit( plugin_dir_url( __FILE__ ) ) );
 define( 'CTX_INV_ADMIN_URL', CTX_INV_URL . '/admin' );
 
 /**
+ * Load textdomain
+ */
+function ctx_invoice_load_textdomain() {
+	load_plugin_textdomain( 'invoices-camptix', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
+add_action( 'init', 'ctx_invoice_load_textdomain' );
+
+/**
  * Load invoice addon.
  */
 function load_camptix_invoices() {
@@ -34,7 +42,6 @@ function register_tix_invoice() {
 		'label'        => __( 'Invoices', 'invoices-camptix' ),
 		'labels'       => array(
 			'name'           => __( 'Invoices', 'invoices-camptix' ),
-			'name'           => _x( 'Invoices', 'Post Type General Name', 'invoices-camptix' ),
 			'singular_name'  => _x( 'Invoice', 'Post Type Singular Name', 'invoices-camptix' ),
 			'menu_name'      => __( 'Invoices', 'invoices-camptix' ),
 			'name_admin_bar' => __( 'Invoice', 'invoices-camptix' ),
