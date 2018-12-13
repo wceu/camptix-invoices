@@ -309,7 +309,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		wp_register_script( 'invoices-camptix', CTX_INV_ADMIN_URL . '/js/camptix-invoices.js', array( 'jquery' ), CTX_INV_VER, true );
 		wp_enqueue_script( 'invoices-camptix' );
 		wp_localize_script( 'invoices-camptix', 'camptixInvoicesVars', array(
-			'invoiceDetailsForm' => home_url( '/wp-json/camptix-invoices/v1/invoice-form' ),
+			'invoiceDetailsForm' => get_rest_url( null, 'camptix-invoices/v1/invoice-form' ),
 		) );
 		wp_register_style( 'camptix-invoices-css', CTX_INV_ADMIN_URL . '/css/camptix-invoices.css', array(), CTX_INV_VER );
 		wp_enqueue_style( 'camptix-invoices-css' );
