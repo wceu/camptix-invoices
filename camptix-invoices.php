@@ -464,8 +464,8 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	// translators: invoice number
 	$invoice_title = sprintf( __( 'Invoice #%s', 'invoices-camptix' ), $invoice_number );
 
-	// TODO: Add a setting to allow the date format to be changed.
-	$pdf->initFacture( $invoice_title, date_i18n( 'd F Y', strtotime( $obj->post_date ) ), '' );
+	$date_format = ! empty( $opt['invoice-date-format'] ) ? $opt['invoice-date-format'] : 'd F Y';
+	$pdf->initFacture( $invoice_title, date_i18n( $date_format, strtotime( $obj->post_date ) ), '' );
 
 	// product.
 	$items = $order['items'];

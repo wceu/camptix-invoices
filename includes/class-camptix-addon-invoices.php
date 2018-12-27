@@ -63,6 +63,11 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 			sprintf( __( 'Invoice numbers are prefixed with the year, and will be reset on the 1st of January (e.g. %1$s-125)', 'invoices-camptix' ), date( 'Y' ) )
 		);
 
+		add_settings_field( 'invoice-date-format', __( 'Date format', 'invoices-camptix' ), array( __CLASS__, 'date_format_callback' ), 'camptix_options', 'invoice', array(
+			'id'    => 'invoice-date-format',
+			'value' => ! empty( $opt['invoice-date-format'] ) ? $opt['invoice-date-format'] : 'd F Y',
+		) );
+
 		$camptix->add_settings_field_helper( 'invoice-vat-number', __( 'VAT number', 'invoices-camptix' ), 'field_yesno', 'invoice',
 			// translators: %1$s is a date.
 			sprintf( __( 'Add a "VAT Number" field to the invoice request form', 'invoices-camptix' ), date( 'Y' ) )
@@ -82,6 +87,22 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$camptix->add_settings_field_helper( 'invoice-company', __( 'Company address', 'invoices-camptix' ), 'field_textarea', 'invoice' );
 		$camptix->add_settings_field_helper( 'invoice-tac', __( 'Terms and Conditions', 'invoices-camptix' ), 'field_textarea', 'invoice' );
 		$camptix->add_settings_field_helper( 'invoice-thankyou', __( 'Note below invoice total', 'invoices-camptix' ), 'field_textarea', 'invoice' );
+	}
+
+	/**
+	 * Date format setting callback.
+	 *
+	 * @param array $args Arguments.
+	 */
+	public static function date_format_callback( $args ) {
+		vprintf( '<input type="text" value="%2$s" name="camptix_options[%1$s]">
+		<p class="description">Date format to use on the invoice, as a PHP Date formatting string (default \'d F Y\' formats dates as %3$s).<br><a href="%4$s">%5$s</a></p>', array(
+			esc_attr( $args['id'] ),
+			esc_attr( $args['value'] ),
+			date( 'd F Y' ),
+			'https://codex.wordpress.org/Formatting_Date_and_Time',
+			'Documentation on date and time formatting',
+		) );
 	}
 
 	/**
@@ -137,6 +158,9 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	public static function validate_options( $output, $input ) {
 		if ( isset( $input['invoice-new-year-reset'] ) ) {
 			$output['invoice-new-year-reset'] = (int) $input['invoice-new-year-reset'];
+		}//end if
+		if ( isset( $input['invoice-date-format'] ) ) {
+			$output['invoice-date-format'] = $input['invoice-date-format'];
 		}//end if
 		if ( isset( $input['invoice-vat-number'] ) ) {
 			$output['invoice-vat-number'] = (int) $input['invoice-vat-number'];
