@@ -260,6 +260,8 @@ function ctx_invoice_metabox_sent( $args ) {
 		<td>%10$s<td></tr>';
 	}//end if
 
+	$txn_id = isset( $metas['transaction_id'] ) ? $metas['transaction_id'] : '';
+
 	$table = '<table class="form-table">' . $table_content . '</table>';
 	$args  = array(
 		esc_html__( 'Total amount', 'invoices-camptix' ),
@@ -270,6 +272,8 @@ function ctx_invoice_metabox_sent( $args ) {
 		esc_html( $metas['email'] ),
 		esc_html__( 'Customer Address', 'invoices-camptix' ),
 		wp_kses( nl2br( $metas['address'] ), array( 'br' => true ) ),
+		esc_html__( 'Transaction ID', 'invoices-camptix' ),
+		esc_html( $txn_id ),
 	);
 
 	if ( ! empty( $opt['invoice-vat-number'] ) ) {

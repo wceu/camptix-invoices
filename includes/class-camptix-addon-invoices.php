@@ -256,6 +256,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 */
 	public static function create_invoice( $attendee, $order, $metas ) {
 		$number = self::create_invoice_number();
+		$txn_id = get_post_meta( $attendee->ID, 'tix_transaction_id', true );
 
 		// Prevent invoice_number from being assigned twice.
 		remove_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10 );
@@ -267,7 +268,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 				// translators: 1: invoice number, 2: transaction id, 3. date.
 				__( 'Invoice #%1$s for order #%2$s on %3$s', 'invoices-camptix' ),
 				$number,
-				get_post_meta( $attendee->ID, 'tix_transaction_id', true ),
+				$txn_id,
 				get_the_time( 'd/m/Y', $attendee )
 			),
 			'post_name'   => sprintf( 'invoice-%s', $number ),
@@ -280,6 +281,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		update_post_meta( $invoice, 'invoice_number', $number );
 		update_post_meta( $invoice, 'invoice_metas', $metas );
 		update_post_meta( $invoice, 'original_order', $order );
+		update_post_meta( $invoice, 'transaction_id', $txn_id );
 		update_post_meta( $invoice, 'auth', uniqid() );
 
 		return $invoice;
