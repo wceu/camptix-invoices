@@ -296,6 +296,7 @@ function Header(){
 	}
 	// elements d'entete
 	foreach($this->elementLst['header'] as $v){
+		$yMax = ( isset( $yMax ) ) ? $yMax : 0;
 		$yMax = max($yMax, $this->prepareLine($v['text'], $this->template[$v['id']]));
 	}
 	// entete du tableau
