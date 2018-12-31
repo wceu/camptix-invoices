@@ -96,13 +96,15 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 */
 	public static function date_format_callback( $args ) {
 		vprintf( '<input type="text" value="%2$s" name="camptix_options[%1$s]">
-		<p class="description">Date format to use on the invoice, as a PHP Date formatting string (default \'d F Y\' formats dates as %3$s).<br><a href="%4$s">%5$s</a></p>', array(
-			esc_attr( $args['id'] ),
-			esc_attr( $args['value'] ),
-			date( 'd F Y' ),
-			'https://codex.wordpress.org/Formatting_Date_and_Time',
-			'Documentation on date and time formatting',
-		) );
+		<p class="description">Date format to use on the invoice, as a PHP Date formatting string (default \'d F Y\' formats dates as %3$s).<br><a href="%4$s">%5$s</a></p>',
+			array(
+				esc_attr( $args['id'] ),
+				esc_attr( $args['value'] ),
+				esc_html( date( 'd F Y' ) ),
+				esc_attr__( 'https://codex.wordpress.org/Formatting_Date_and_Time', 'invoices-camptix' ),
+				esc_html__( 'Documentation on date and time formatting', 'invoices-camptix' ),
+			)
+		);
 	}
 
 	/**
@@ -255,22 +257,37 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @todo Link invoice and corresponding attendees
 	 */
 	public static function create_invoice( $attendee, $order, $metas ) {
-		$number = self::create_invoice_number();
-		$txn_id = get_post_meta( $attendee->ID, 'tix_transaction_id', true );
+		$number         = self::create_invoice_number();
+		$attendee_email = get_post_meta( $attendee->ID, 'tix_email', true );
+		$txn_id         = get_post_meta( $attendee->ID, 'tix_transaction_id', true );
 
 		// Prevent invoice_number from being assigned twice.
 		remove_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10 );
 
+		// $txn_id may be null if no transaction was created (100% coupon used).
+		if ( $txn_id ) {
+			$invoice_title = sprintf(
+				// translators: 1: invoice number, 2: email, 3: transaction id, 4. date.
+				__( 'Invoice #%1$s for %2$s (order #%3$s) on %4$s', 'invoices-camptix' ),
+				$number,
+				$attendee_email,
+				$txn_id,
+				get_the_time( 'd/m/Y', $attendee )
+			);
+		} else {
+			$invoice_title = sprintf(
+				// translators: 1: invoice number, 2: email, 3. date.
+				__( 'Invoice #%1$s for %2$s on %3$s', 'invoices-camptix' ),
+				$number,
+				$attendee_email,
+				get_the_time( 'd/m/Y', $attendee )
+			);
+		}//end if
+
 		$arr = array(
 			'post_type'   => 'tix_invoice',
 			'post_status' => 'publish',
-			'post_title'  => sprintf(
-				// translators: 1: invoice number, 2: transaction id, 3. date.
-				__( 'Invoice #%1$s for order #%2$s on %3$s', 'invoices-camptix' ),
-				$number,
-				$txn_id,
-				get_the_time( 'd/m/Y', $attendee )
-			),
+			'post_title'  => $invoice_title,
 			'post_name'   => sprintf( 'invoice-%s', $number ),
 		);
 
