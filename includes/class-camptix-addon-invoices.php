@@ -58,6 +58,11 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		add_settings_section( 'invoice', __( 'Invoices settings', 'invoices-camptix' ), '__return_false', 'camptix_options' );
 		global $camptix;
 
+		$camptix->add_settings_field_helper( 'invoice-active', __( 'Activate invoice requests', 'invoices-camptix' ), 'field_yesno', 'invoice',
+			// translators: %1$s is a date.
+			sprintf( __( 'Allow ticket buyers to ask for an invoice when purchasing their tickets.', 'invoices-camptix' ), date( 'Y' ) )
+		);
+
 		$camptix->add_settings_field_helper( 'invoice-new-year-reset', __( 'Yearly reset', 'invoices-camptix' ), 'field_yesno', 'invoice',
 			// translators: %1$s is a date.
 			sprintf( __( 'Invoice numbers are prefixed with the year, and will be reset on the 1st of January (e.g. %1$s-125)', 'invoices-camptix' ), date( 'Y' ) )
@@ -158,6 +163,9 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @param object $input  Input options.
 	 */
 	public static function validate_options( $output, $input ) {
+		if ( isset( $input['invoice-active'] ) ) {
+			$output['invoice-active'] = (int) $input['invoice-active'];
+		}//end if
 		if ( isset( $input['invoice-new-year-reset'] ) ) {
 			$output['invoice-new-year-reset'] = (int) $input['invoice-new-year-reset'];
 		}//end if
@@ -349,11 +357,18 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @todo enqueue only on [camptix] shortcode
 	 */
 	public static function enqueue_assets() {
-		wp_register_script( 'invoices-camptix', CTX_INV_ADMIN_URL . '/js/camptix-invoices.js', array( 'jquery' ), CTX_INV_VER, true );
-		wp_enqueue_script( 'invoices-camptix' );
-		wp_localize_script( 'invoices-camptix', 'camptixInvoicesVars', array(
-			'invoiceDetailsForm' => get_rest_url( null, 'camptix-invoices/v1/invoice-form' ),
-		) );
+
+		$opt = get_option( 'camptix_options' );
+		if ( ! empty( $opt['invoice-active'] ) ) {
+
+			wp_register_script( 'invoices-camptix', CTX_INV_ADMIN_URL . '/js/camptix-invoices.js', array( 'jquery' ), CTX_INV_VER, true );
+			wp_enqueue_script( 'invoices-camptix' );
+			wp_localize_script( 'invoices-camptix', 'camptixInvoicesVars', array(
+				'invoiceDetailsForm' => get_rest_url( null, 'camptix-invoices/v1/invoice-form' ),
+			) );
+
+		}//end if
+
 		wp_register_style( 'camptix-invoices-css', CTX_INV_ADMIN_URL . '/css/camptix-invoices.css', array(), CTX_INV_VER );
 		wp_enqueue_style( 'camptix-invoices-css' );
 	}

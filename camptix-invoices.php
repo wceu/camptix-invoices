@@ -356,10 +356,14 @@ add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
  * Register REST API endpoint to serve invoice details form
  */
 add_action( 'rest_api_init', function () {
-	register_rest_route( 'camptix-invoices/v1', '/invoice-form', array(
-		'methods'  => 'GET',
-		'callback' => 'ctx_invoice_form',
-	) );
+
+	$opt = get_option( 'camptix_options' );
+	if ( ! empty( $opt['invoice-active'] ) ) {
+		register_rest_route( 'camptix-invoices/v1', '/invoice-form', array(
+			'methods'  => 'GET',
+			'callback' => 'ctx_invoice_form',
+		) );
+	}//end if
 } );
 
 /**
