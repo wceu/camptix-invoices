@@ -417,7 +417,7 @@ add_action( 'admin_post_camptix-invoice.get', 'ctx_download_invoice' );
  * @param int    $invoice The invoice id.
  * @param string $target  The target.
  */
-function ctx_get_invoice( $invoice, $target = 'I' ) { // TODO change to 'D'
+function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$obj            = get_post( $invoice );
 	$order          = get_post_meta( $invoice, 'original_order', true );
 	$metas          = get_post_meta( $invoice, 'invoice_metas', true );
