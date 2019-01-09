@@ -417,7 +417,7 @@ add_action( 'admin_post_camptix-invoice.get', 'ctx_download_invoice' );
  * @param int    $invoice The invoice id.
  * @param string $target  The target.
  */
-function ctx_get_invoice( $invoice, $target = 'D' ) {
+function ctx_get_invoice( $invoice, $target = 'I' ) { // TODO change to 'D'
 	$obj            = get_post( $invoice );
 	$order          = get_post_meta( $invoice, 'original_order', true );
 	$metas          = get_post_meta( $invoice, 'invoice_metas', true );
@@ -430,37 +430,38 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	// #1 Initialize the basic information.
 	//
 	// address of the company issuing the invoice.
-	$address   = __( 'Organizer:', 'invoices-camptix' ) . PHP_EOL . $opt['invoice-company'];
+	$address   = __( 'From:', 'invoices-camptix' ) . PHP_EOL . $opt['invoice-company'];
 	$thank_you = $opt['invoice-thankyou'];
 
 	// customer address.
 	$args = array( $metas['name'], $metas['address'], $metas['email'] );
 	$opt  = get_option( 'camptix_options' );
 	if ( ! empty( $opt['invoice-vat-number'] ) ) {
-		array_unshift( $args, $metas['vat-number'] );
+		array_push( $args, __( 'VAT no:', 'invoices-camptix' ) . ' ' . $metas['vat-number'] );
 	}//end if
 
-	$customer_address = implode( PHP_EOL, $args );
+	$customer_address = __( 'To:', 'invoices-camptix' ) . PHP_EOL . implode( PHP_EOL, $args );
 
 	// CGV.
 	$cgv = $opt['invoice-tac'];
 
 	// initialize the object invoicePDF.
-	$pdf = new facturePDF( $address, $customer_address, $cgv . PHP_EOL . $thank_you );
+	$pdf = new facturePDF( $address, $customer_address, get_bloginfo('name') );
 
 	// set the logo.
-	$logo_url = wp_get_attachment_url( $opt['invoice-logo'] );
-	$pdf->setLogo( $logo_url );
+	$logo_url      = wp_get_attachment_url( $opt['invoice-logo'] );
+	$logo_metadata = wp_get_attachment_metadata( $opt['invoice-logo'] );
+	$pdf->setLogo( $logo_url, $logo_metadata->width );
 
 	// product header.
-	$pdf->productHeaderAddRow( __( 'Title', 'invoices-camptix' ), 45, 'L' );
-	$pdf->productHeaderAddRow( __( 'Unit price', 'invoices-camptix' ), 45, 'C' );
-	$pdf->productHeaderAddRow( __( 'Quantity', 'invoices-camptix' ), 45, 'C' );
-	$pdf->productHeaderAddRow( __( 'Total', 'invoices-camptix' ), 45, 'C' );
+	$pdf->productHeaderAddRow( __( 'Title', 'invoices-camptix' ), 70, 'L' );
+	$pdf->productHeaderAddRow( __( 'Quantity', 'invoices-camptix' ), 30, 'R' );
+	$pdf->productHeaderAddRow( __( 'Unit Price', 'invoices-camptix' ), 30, 'R' );
+	$pdf->productHeaderAddRow( __( 'Total Price', 'invoices-camptix' ), 30, 'R' );
 
 	// header of the totals.
 	$pdf->totalHeaderAddRow( 30, 'L' );
-	$pdf->totalHeaderAddRow( 30, 'C' );
+	$pdf->vatTotalHeaderAddRow( 30, 'L' );
 
 	// custom element.
 	$pdf->elementAdd( '', 'traitEnteteProduit', 'content' );
@@ -485,12 +486,15 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 		$item_price   = number_format_i18n( $item['price'], 2 );
 		$item_quatity = $item['quantity'];
 		$item_total   = number_format_i18n( $item_price * $item_quatity, 2 );
-		$pdf->productAdd( array( $item_title, $item_price, $item_quatity, $item_total ) );
+		$pdf->productAdd( array( $item_title, $item_quatity, $item_price, $item_total ) );
 	}//end foreach
 
 	// total line.
-	$total = number_format_i18n( $order['total'], 2 ) . ' ' . $currency;
+	$total     = number_format_i18n( $order['total'], 2 ) . ' ' . $currency;
+	$vat_total = number_format_i18n( 0, 2 ) . ' ' . $currency;
+	$pdf->vatTotalAdd( array( __( 'VAT amount:', 'invoices-camptix' ), $vat_total ) );
 	$pdf->totalAdd( array( __( 'Total amount:', 'invoices-camptix' ), $total ) );
+	$pdf->afterContentAdd( explode( PHP_EOL, $cgv . PHP_EOL . $thank_you ) );
 
 	// #3 Imports the template
 	//

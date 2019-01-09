@@ -18,6 +18,12 @@ private $productLst = array();
 private $totalHead = array();
 private $totalWidth;
 private $totalLst = array();
+private $vatTotalHead = array();
+private $vatTotalWidth;
+private $vatTotalLst = array();
+
+private $afterContent = array();
+
 // gabarit
 public $template;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -26,18 +32,21 @@ public $template;
 // $atextAdr1 : adresse de l'entreprise
 // $atextAdr2 : adresse du client
 // $aFooter : texte du pied de page
-function __construct($atextAdr1='', $atextAdr2='', $aFooter=''){
+function __construct($atextAdr1='', $atextAdr2='', $aFooter='') {
 	parent::__construct();
 	$this->SetMargins(0, 0, 0);
-	$this->SetFont('Helvetica', '', 11);
+	$this->SetFont('Helvetica', '', 10);
 	$this->SetCreator('CReSeL CMS, module Boutique en ligne');
 	$this->SetAuthor('CReSeL');
 	$this->AliasNbPages();
 	$this->template = array();
 	$this->template['productHead'] = $this->templateArrayInit();
 	$this->template['product'] = $this->templateArrayInit();
+	$this->template['afterContent'] = $this->templateArrayInit();
 	$this->template['totalHead'] = $this->templateArrayInit();
 	$this->template['total'] = $this->templateArrayInit();
+	$this->template['vatTotalHead'] = $this->templateArrayInit();
+	$this->template['vatTotal'] = $this->templateArrayInit();
 	$this->elementLst = array('header'=> array(), 'content'=> array(), 'footer'=>array());
 	$this->elementAdd($atextAdr1, 'header', 'header');
 	$this->elementAdd($atextAdr2, 'client', 'header');
@@ -65,7 +74,7 @@ function templateArrayInit(){
 // $aWidth : largeur à l'affichage
 // $aX : position depuis le bord gauche
 // $aY : position depuis le bord haut
-public function setLogo($aUrl='', $aWidth=30, $aX=10, $aY=6){
+public function setLogo($aUrl='', $aWidth=30, $aX=20, $aY=20){
 	$this->logoUrl = $aUrl;
 	$this->logoPosX = $aX;
 	$this->logoPosY = $aY;
@@ -127,6 +136,11 @@ public function totalHeaderAddRow($aWidth='30', $aAlign='C'){
 	$this->totalHead[] = array('width'=>$aWidth, 'align'=>$aAlign);
 	$this->totalWidth += intval($aWidth);
 }
+public function vatTotalHeaderAddRow($aWidth='30', $aAlign='C'){
+	$this->vatTotalHead[] = array('width'=>$aWidth, 'align'=>$aAlign);
+	$this->vatTotalWidth += intval($aWidth);
+}
+
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // tableau de totaux
 //
@@ -134,10 +148,17 @@ public function totalHeaderAddRow($aWidth='30', $aAlign='C'){
 public function totalAdd($aLst=''){
 	if(!empty($aLst)) $this->totalLst[] = $aLst;
 }
+public function vatTotalAdd($aLst=''){
+	if(!empty($aLst)) $this->vatTotalLst[] = $aLst;
+}
+
+public function afterContentAdd($aLst='') {
+	if(!empty($aLst)) $this->afterContent = $aLst;
+}
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // prépare le contenu du PDF
 //
-public function buildPDF(){
+public function buildPDF() {
 	// ajoute une nouvelle page (avec entête et pied de page)
 	$this->AddPage();
 	$yMax = $this->GetY();
@@ -178,6 +199,13 @@ public function buildPDF(){
 		}
 	}
 	// affiche le total
+	if(!empty($this->vatTotalLst)){
+		$this->prepareLine('', $this->template['vatTotalHead'], 0);
+		$tplt = $this->template['vatTotal'];
+		foreach($this->vatTotalLst as $r){
+			$this->buildLine($this->vatTotalWidth, $tplt['lineHeight'], $this->vatTotalHead, $r, $tplt, $tplt['color'], $tplt['backgroundColor']);
+		}
+	}
 	if(!empty($this->totalLst)){
 		$this->prepareLine('', $this->template['totalHead'], 0);
 		$tplt = $this->template['total'];
@@ -185,6 +213,13 @@ public function buildPDF(){
 			$this->buildLine($this->totalWidth, $tplt['lineHeight'], $this->totalHead, $r, $tplt, $tplt['color'], $tplt['backgroundColor']);
 		}
 	}
+
+	if(!empty($this->afterContent)){
+		foreach($this->afterContent as $r){
+			$this->prepareLine($r, $this->template['afterContent'], 0);
+		}
+	}
+
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // prépare l'affichage d'une ligne simple
