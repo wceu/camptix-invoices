@@ -494,7 +494,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$vat_total = number_format_i18n( 0, 2 ) . ' ' . $currency;
 	$pdf->vatTotalAdd( array( __( 'VAT amount:', 'invoices-camptix' ), $vat_total ) );
 	$pdf->totalAdd( array( __( 'Total amount:', 'invoices-camptix' ), $total ) );
-	$pdf->afterContentAdd( explode( PHP_EOL, $cgv . PHP_EOL . $thank_you ) );
+	$pdf->afterContentAdd( explode( PHP_EOL, $thank_you . PHP_EOL . $cgv ) );
 
 	// #3 Imports the template
 	//
