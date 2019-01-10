@@ -43,8 +43,8 @@ $pdf->template['footer']['backgroundColor'] = array(
 	'g' => 245,
 	'b' => 245,
 );
-$pdf->template['footer']['margin']  = array( 265, 10, 0, 10 );
-$pdf->template['footer']['padding'] = array( 4, 5, 0, 5 );
+$pdf->template['footer']['margin']  = array( 280, 10, 0, 10 );
+$pdf->template['footer']['padding'] = array( 0, 5, 0, 5 );
 
 // Product header.
 $pdf->template['productHead']['fontFace']        = 'B';

@@ -417,7 +417,7 @@ add_action( 'admin_post_camptix-invoice.get', 'ctx_download_invoice' );
  * @param int    $invoice The invoice id.
  * @param string $target  The target.
  */
-function ctx_get_invoice( $invoice, $target = 'D' ) {
+function ctx_get_invoice( $invoice, $target = 'I' ) { //should be D
 	$obj            = get_post( $invoice );
 	$order          = get_post_meta( $invoice, 'original_order', true );
 	$metas          = get_post_meta( $invoice, 'invoice_metas', true );
@@ -454,8 +454,8 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$pdf->setLogo( $logo_url, $logo_metadata->width );
 
 	// product header.
-	$pdf->productHeaderAddRow( __( 'Title', 'invoices-camptix' ), 70, 'L' );
-	$pdf->productHeaderAddRow( __( 'Quantity', 'invoices-camptix' ), 30, 'R' );
+	$pdf->productHeaderAddRow( __( 'Title', 'invoices-camptix' ), 75, 'L' );
+	$pdf->productHeaderAddRow( __( 'Quantity', 'invoices-camptix' ), 25, 'R' );
 	$pdf->productHeaderAddRow( __( 'Unit Price', 'invoices-camptix' ), 30, 'R' );
 	$pdf->productHeaderAddRow( __( 'Total Price', 'invoices-camptix' ), 30, 'R' );
 
