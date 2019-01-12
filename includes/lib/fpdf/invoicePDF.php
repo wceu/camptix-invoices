@@ -2,7 +2,7 @@
 
 // v1.0 du 12/12/13 - Patrice Kuntz - blog.niap3d.com
 require('fpdf.php');
-class facturePDF extends FPDF{
+class invoicePDF extends FPDF{
 // Content.
 private $elementLst;
 // Logo.

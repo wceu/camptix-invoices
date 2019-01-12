@@ -425,7 +425,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$opt            = get_option( 'camptix_options' );
 	$currency       = esc_html( $opt['currency'] );
 
-	require 'includes/lib/fpdf/facturePDF.php';
+	require 'includes/lib/fpdf/invoicePDF.php';
 
 	// #1 Initialize the basic information.
 	//
@@ -446,7 +446,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$cgv = $opt['invoice-tac'];
 
 	// initialize the object invoicePDF.
-	$pdf = new facturePDF( $address, $customer_address, get_bloginfo('name') );
+	$pdf = new invoicePDF( $address, $customer_address, get_bloginfo('name') );
 
 	// set the logo.
 	$logo_url      = wp_get_attachment_url( $opt['invoice-logo'] );
