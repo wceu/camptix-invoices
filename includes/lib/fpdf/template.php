@@ -21,9 +21,9 @@ $pdf->template['infoFacture']['align']    = 'R';
 $pdf->template['infoFacture']['fontFace'] = 'B';
 
 // Date.
-$pdf->template['infoDate']['margin'] = array( 30, 20, 0, 120 );
+$pdf->template['infoDate']['margin']   = array( 30, 20, 0, 120 );
 $pdf->template['infoDate']['fontSize'] = 12;
-$pdf->template['infoDate']['align']  = 'R';
+$pdf->template['infoDate']['align']    = 'R';
 
 // Client.
 $pdf->template['client']['margin']   = array( 60, 20, 0, 120 );
@@ -31,9 +31,9 @@ $pdf->template['client']['fontSize'] = 10;
 $pdf->template['client']['align']    = 'R';
 
 // Footer.
-$pdf->template['footer']['fontSize'] = 10;
-$pdf->template['footer']['align']    = 'C';
-$pdf->template['footer']['color']    = array(
+$pdf->template['footer']['fontSize']        = 10;
+$pdf->template['footer']['align']           = 'C';
+$pdf->template['footer']['color']           = array(
 	'r' => 100,
 	'g' => 100,
 	'b' => 100,
@@ -43,8 +43,8 @@ $pdf->template['footer']['backgroundColor'] = array(
 	'g' => 245,
 	'b' => 245,
 );
-$pdf->template['footer']['margin']  = array( 280, 10, 0, 10 );
-$pdf->template['footer']['padding'] = array( 0, 5, 0, 5 );
+$pdf->template['footer']['margin']          = array( 280, 10, 0, 10 );
+$pdf->template['footer']['padding']         = array( 0, 5, 0, 5 );
 
 // Product header.
 $pdf->template['productHead']['fontFace']        = 'B';
@@ -102,8 +102,8 @@ $pdf->template['vatTotal']['fontSize'] = 10;
 $pdf->template['vatTotal']['margin']   = array( 1, 0, 1, 130 );
 
 $pdf->template['afterContent']['lineHeight'] = 3;
-$pdf->template['afterContent']['fontSize'] = 10;
-$pdf->template['afterContent']['padding']  = array( 1, 4, 1, 4 );
-$pdf->template['afterContent']['margin']   = array( 1, 0, 0, 20 );
+$pdf->template['afterContent']['fontSize']   = 10;
+$pdf->template['afterContent']['padding']    = array( 1, 4, 1, 4 );
+$pdf->template['afterContent']['margin']     = array( 1, 0, 0, 20 );
 
 // Custom elements.

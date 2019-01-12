@@ -38,29 +38,31 @@ add_action( 'camptix_load_addons', 'load_camptix_invoices' );
  * Register invoice CPT.
  */
 function register_tix_invoice() {
-	register_post_type( 'tix_invoice', array(
-		'label'        => __( 'Invoices', 'invoices-camptix' ),
-		'labels'       => array(
-			'name'           => __( 'Invoices', 'invoices-camptix' ),
-			'singular_name'  => _x( 'Invoice', 'Post Type Singular Name', 'invoices-camptix' ),
-			'menu_name'      => __( 'Invoices', 'invoices-camptix' ),
-			'name_admin_bar' => __( 'Invoice', 'invoices-camptix' ),
-			'archives'       => __( 'Invoice Archives', 'invoices-camptix' ),
-			'attributes'     => __( 'Invoice Attributes', 'invoices-camptix' ),
-			'add_new_item'   => __( 'Add New Invoice', 'invoices-camptix' ),
-			'add_new'        => __( 'Add New', 'invoices-camptix' ),
-			'new_item'       => __( 'New Invoice', 'invoices-camptix' ),
-			'edit_item'      => __( 'Edit Invoice', 'invoices-camptix' ),
-			'update_item'    => __( 'Update Invoice', 'invoices-camptix' ),
-			'view_item'      => __( 'View Invoice', 'invoices-camptix' ),
-			'view_items'     => __( 'View Invoices', 'invoices-camptix' ),
-			'search_items'   => __( 'Search Invoices', 'invoices-camptix' ),
-		),
-		'supports'     => array( 'title' ),
-		'public'       => false,
-		'show_ui'      => true,
-		'show_in_menu' => 'edit.php?post_type=tix_ticket',
-	) );
+	register_post_type(
+		'tix_invoice', array(
+			'label'        => __( 'Invoices', 'invoices-camptix' ),
+			'labels'       => array(
+				'name'           => __( 'Invoices', 'invoices-camptix' ),
+				'singular_name'  => _x( 'Invoice', 'Post Type Singular Name', 'invoices-camptix' ),
+				'menu_name'      => __( 'Invoices', 'invoices-camptix' ),
+				'name_admin_bar' => __( 'Invoice', 'invoices-camptix' ),
+				'archives'       => __( 'Invoice Archives', 'invoices-camptix' ),
+				'attributes'     => __( 'Invoice Attributes', 'invoices-camptix' ),
+				'add_new_item'   => __( 'Add New Invoice', 'invoices-camptix' ),
+				'add_new'        => __( 'Add New', 'invoices-camptix' ),
+				'new_item'       => __( 'New Invoice', 'invoices-camptix' ),
+				'edit_item'      => __( 'Edit Invoice', 'invoices-camptix' ),
+				'update_item'    => __( 'Update Invoice', 'invoices-camptix' ),
+				'view_item'      => __( 'View Invoice', 'invoices-camptix' ),
+				'view_items'     => __( 'View Invoices', 'invoices-camptix' ),
+				'search_items'   => __( 'Search Invoices', 'invoices-camptix' ),
+			),
+			'supports'     => array( 'title' ),
+			'public'       => false,
+			'show_ui'      => true,
+			'show_in_menu' => 'edit.php?post_type=tix_ticket',
+		)
+	);
 }
 
 /**
@@ -74,7 +76,8 @@ function ctx_invoice_link( $post ) {
 	}//end if
 	$invoice_number = get_post_meta( $post->ID, 'invoice_number', true );
 	$auth           = get_post_meta( $post->ID, 'auth', true );
-	vprintf( '<div class="misc-pub-section"><p>%3$s <strong>%4$s</strong></p><a href="%s" class="button button-secondary" target="_blank">%2$s</a></div>',
+	vprintf(
+		'<div class="misc-pub-section"><p>%3$s <strong>%4$s</strong></p><a href="%s" class="button button-secondary" target="_blank">%2$s</a></div>',
 		array(
 			esc_attr( admin_url( 'admin-post.php?action=camptix-invoice.get&invoice_id=' . $post->ID . '&invoice_auth=' . $auth ) ),
 			esc_html__( 'Print invoice', 'invoices-camptix' ),
@@ -136,7 +139,8 @@ function ctx_invoice_metabox_editable( $args ) {
 		<td><input type="number" min="0" value="%3$.2f" name="order[items][%1$d][price]" class="widefat"></td><!-- price -->
 		<td><input type="number" min="0" value="%4$s" name="order[items][%1$d][quantity]" class="widefat"></td><!-- qty -->
 		</tr>';
-	vprintf( '<table class="widefat"><thead><tr>
+	vprintf(
+		'<table class="widefat"><thead><tr>
 		<th>%1$s</th>
 		<th>%2$s</th>
 		<th>%3$s</th>
@@ -224,7 +228,8 @@ function ctx_invoice_metabox_sent( $args ) {
 		<td>%2$.2f</td><!-- price -->
 		<td>%3$s</td><!-- qty -->
 		</tr>';
-	vprintf( '<table class="widefat"><thead><tr>
+	vprintf(
+		'<table class="widefat"><thead><tr>
 		<th>%1$s</th>
 		<th>%2$s</th>
 		<th>%3$s</th>
@@ -355,16 +360,20 @@ add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
 /**
  * Register REST API endpoint to serve invoice details form
  */
-add_action( 'rest_api_init', function () {
+add_action(
+	'rest_api_init', function () {
 
-	$opt = get_option( 'camptix_options' );
-	if ( ! empty( $opt['invoice-active'] ) ) {
-		register_rest_route( 'camptix-invoices/v1', '/invoice-form', array(
-			'methods'  => 'GET',
-			'callback' => 'ctx_invoice_form',
-		) );
-	}//end if
-} );
+		$opt = get_option( 'camptix_options' );
+		if ( ! empty( $opt['invoice-active'] ) ) {
+			register_rest_route(
+				'camptix-invoices/v1', '/invoice-form', array(
+					'methods'  => 'GET',
+					'callback' => 'ctx_invoice_form',
+				)
+			);
+		}//end if
+	}
+);
 
 /**
  * Invoice form generator.
@@ -446,7 +455,7 @@ function ctx_get_invoice( $invoice, $target = 'D' ) {
 	$cgv = $opt['invoice-tac'];
 
 	// initialize the object invoicePDF.
-	$pdf = new invoicePDF( $address, $customer_address, get_bloginfo('name') );
+	$pdf = new invoicePDF( $address, $customer_address, get_bloginfo( 'name' ) );
 
 	// set the logo.
 	$logo_url      = wp_get_attachment_url( $opt['invoice-logo'] );
