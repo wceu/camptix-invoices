@@ -1,20 +1,20 @@
 <?php
-// 15/08/13 - Correction ligne 30
+
 // v1.0 du 12/12/13 - Patrice Kuntz - blog.niap3d.com
 require('fpdf.php');
 class facturePDF extends FPDF{
-// contenu
+// Content.
 private $elementLst;
-// logo
+// Logo.
 private $logoUrl;
 private $logoPosX;
 private $logoPosY;
 private $logoWidth;
-// produit
+// Product.
 private $productHead = array();
 private $productWidth;
 private $productLst = array();
-// totaux
+// Totals.
 private $totalHead = array();
 private $totalWidth;
 private $totalLst = array();
@@ -23,21 +23,22 @@ private $vatTotalWidth;
 private $vatTotalLst = array();
 
 private $afterContent = array();
-
-// gabarit
+// Template.
 public $template;
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// constructeur
-//
-// $atextAdr1 : adresse de l'entreprise
-// $atextAdr2 : adresse du client
-// $aFooter : texte du pied de page
+
+/**
+ * Constructor.
+ *
+ * @param string $atextAdr1   Organization's address.
+ * @param string $atextAdr2   Customer's address.
+ * @param string $aFooter     Footer text.
+ */
 function __construct($atextAdr1='', $atextAdr2='', $aFooter='') {
 	parent::__construct();
 	$this->SetMargins(0, 0, 0);
 	$this->SetFont('Helvetica', '', 10);
-	$this->SetCreator('CReSeL CMS, module Boutique en ligne');
-	$this->SetAuthor('CReSeL');
+	$this->SetCreator('CampTix Invoices');
+	$this->SetAuthor('CampTix Invoices');
 	$this->AliasNbPages();
 	$this->template = array();
 	$this->template['productHead'] = $this->templateArrayInit();
@@ -52,9 +53,10 @@ function __construct($atextAdr1='', $atextAdr2='', $aFooter='') {
 	$this->elementAdd($atextAdr2, 'client', 'header');
 	$this->elementAdd($aFooter, 'footer', 'footer');
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// initialise un gabarit
-//
+
+/**
+ * Initializes a template.
+ */
 function templateArrayInit(){
 	$r = array();
 	$r['lineHeight'] = 6;
@@ -67,36 +69,39 @@ function templateArrayInit(){
 	$r['padding'] = array(0, 0, 0, 0);
 	return $r;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// initialise le logo
-//
-// $aUrl : adresse du fichier PNG, JPEG ou GIF
-// $aWidth : largeur à l'affichage
-// $aX : position depuis le bord gauche
-// $aY : position depuis le bord haut
+/**
+ * Initializes the logo.
+ *
+ * $aUrl : Image file URL (PNG, JPEG or GIF).
+ * $aWidth : Image display width.
+ * $aX : Position from the left edge.
+ * $aY : Position from the top edge.
+ */
 public function setLogo($aUrl='', $aWidth=30, $aX=20, $aY=20){
 	$this->logoUrl = $aUrl;
 	$this->logoPosX = $aX;
 	$this->logoPosY = $aY;
 	$this->logoWidth = $aWidth;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// initialise le numéro de facture
-//
-// $aFacture : numéro de facture
-// $aPage : texte à afiche devant le numéro de page
-// $aDate : date d'émission de la facture
+/**
+ * Initializes the invoice number.
+ *
+ * @param string $aFacture   Invoice number.
+ * @param string $aPage      String to display in front of the page number.
+ * @param string $aDate      Invoice date.
+ */
 public function initFacture($aFacture='', $aDate='', $aPage=''){
 	$this->elementAdd($aFacture, 'infoFacture', 'header');
 	$this->elementAdd($aDate, 'infoDate', 'header');
 	$this->elementAdd($aPage, 'infoPage', 'header');
 	$this->SetSubject($aFacture, true);
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// liste de contenu
-//
-// $aTxt : texte à afficher dans le bloc
-// $aid : identifiant qui sert à relier l'élément au gabarit
+/**
+ * Content list.
+ *
+ * @param string $aTxt   Text content of the current block.
+ * @param int $aid       Unique ID to link this element to the template.
+ */
 public function elementAdd($aTxt, $aId, $aZone='content'){
 	if(empty($aId)) return 0;
 	switch($aZone){
@@ -108,30 +113,32 @@ public function elementAdd($aTxt, $aId, $aZone='content'){
 		break;
 	}
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// entete du tableau des produits
-//
-// $aStr : nom de la colonne
-// $aWidth : largeur de la colonne
-// $aHeaderALign : alignement de la cellule d'entête
-// $aContentAlign : alignement des celules de contenu
+/**
+ * Products table header.
+ *
+ * @param string $aStr     Column name.
+ * @param string $aWidth   Column width.
+ * @param string $aAlign   Text alignment ('C' for center).
+ */
 public function productHeaderAddRow($aStr, $aWidth='30', $aAlign='C'){
 	if(empty($aStr)) return 0;
 	$this->productHead[] = array('text'=>$aStr, 'width'=>$aWidth, 'align'=>$aAlign);
 	$this->productWidth += intval($aWidth);
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// tableau de produit
-//
-// $aLst est une array qui contient les infos à afficher
+/**
+ * Products table.
+ *
+ * @param array $aLst   List of info to display.
+*/
 public function productAdd($aLst=''){
 	if(!empty($aLst)) $this->productLst[] = $aLst;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// entete du tableau des totaux
-//
-// $aVal : valeur
-// $aContentAlign : alignement des celules de contenu
+/**
+ * Totals table header.
+ *
+ * @param string $aWidth   Column width.
+ * @param string $aAlign   Text alignment ('C' for center).
+ */
 public function totalHeaderAddRow($aWidth='30', $aAlign='C'){
 	$this->totalHead[] = array('width'=>$aWidth, 'align'=>$aAlign);
 	$this->totalWidth += intval($aWidth);
@@ -141,10 +148,11 @@ public function vatTotalHeaderAddRow($aWidth='30', $aAlign='C'){
 	$this->vatTotalWidth += intval($aWidth);
 }
 
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// tableau de totaux
-//
-// $aLst est une array qui contient les infos à afficher
+/**
+ * Totals table.
+ *
+ * @param array $aLst   List of info to display.
+ */
 public function totalAdd($aLst=''){
 	if(!empty($aLst)) $this->totalLst[] = $aLst;
 }
@@ -155,21 +163,21 @@ public function vatTotalAdd($aLst=''){
 public function afterContentAdd($aLst='') {
 	if(!empty($aLst)) $this->afterContent = $aLst;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// prépare le contenu du PDF
-//
+/**
+ * Prepares the PDF content.
+ */
 public function buildPDF() {
-	// ajoute une nouvelle page (avec entête et pied de page)
+	// Adds a new page (including header and footer)
 	$this->AddPage();
 	$yMax = $this->GetY();
 	foreach($this->elementLst['content'] as $v){
 		$yMax = max($yMax, $this->prepareLine($v['text'], $this->template[$v['id']]));
 	}
 	$this->SetY($yMax);
-	// affiche les produits
+	// Displays products.
 	if(!empty($this->productLst)){
 		$tplt = $this->template['product'];
-		// initialise les marges
+		// Initializes margins.
 		$this->lMargin = $tplt['padding'][3]+$tplt['margin'][3];
 		$this->rMargin = $tplt['padding'][1]+$tplt['margin'][1];
 		$this->SetFont('', '', $tplt['fontSize']);
@@ -179,14 +187,14 @@ public function buildPDF() {
 			$nb++;
 			$posMaxY = 0;
 			$nbLineMax = 0;
-			// cherche la cellule qui a le plus de contenu
+			// Looks for the cell with the largest content.
 			foreach($r as $k=>$v){
 				$nbLineMax = max($nbLineMax, $this->NbLines($this->productHead[$k]['width'], $v));
 			}
 			$cellHeightMax = $nbLineMax*$tplt['lineHeight'];
-			// vérifie si on a la place pour ajouter la ligne. sinon créer une nouvelle page
+			// Makes sure there is enough room for a new line. Creates a new page is there is not.
 			if($this->GetY()+$cellHeightMax>$this->PageBreakTrigger) $this->AddPage();
-			// change les couleurs
+			// Alternates colors on each row.
 			if($nb%2!=0){
 				$bg = $tplt['backgroundColor'];
 				$fg = $tplt['color'];
@@ -198,7 +206,7 @@ public function buildPDF() {
 			$this->buildLine($this->productWidth, $cellHeightMax, $this->productHead, $r, $tplt, $fg, $bg);
 		}
 	}
-	// affiche le total
+	// Displays total.
 	if(!empty($this->vatTotalLst)){
 		$this->prepareLine('', $this->template['vatTotalHead'], 0);
 		$tplt = $this->template['vatTotal'];
@@ -221,70 +229,75 @@ public function buildPDF() {
 	}
 
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// prépare l'affichage d'une ligne simple
-//
-// $aText : texte à afficher
-// $aTplt : gabarit à utiliser
+/**
+ * Prepares a single line for display.
+ *
+ * @param string $aText   Text to display.
+ * @param array $aTplt    Template.
+ */
 private function prepareLine($aText, $aTplt, $aInitPos=1){
-	// initialise la position
+	// Initialize the position.
 	if($aInitPos) $this->SetXY(0, 0);
-	// calcul la largeur (dimension du fichier - marge gauche et droite - padding gauche et droit)
+	// Computes the width. (file width - left and right margins - left and right padding)
 	$w = $this->w-$aTplt['margin'][1]-$aTplt['margin'][3]-$aTplt['padding'][1]-$aTplt['padding'][3];
-	// définit la typo pour le calcul du nombre de ligne
+	// Sets the font to compute the number of lines.
 	$this->SetFont('', '', $aTplt['fontSize']);
-	// calcul le nombre de ligne (à peu près)
+	// Computes the number of line (approximately)
 	$nbLineMax = $this->NbLines($w, $aText);
-	// calcul la hauteur (nombre de ligne x hauteur de ligne du gabarit)
+	// Computes the height (number of lines * line height of the template)
 	$h = $nbLineMax*$aTplt['lineHeight'];
-	// créer la ligne
+	// Creates the line.
 	$this->buildLine($w, $h, array(0=>array('width'=>$w, 'align'=>$aTplt['align'])), array(0=>$aText), $aTplt, $aTplt['color'], $aTplt['backgroundColor']);
-	// renvoi la position actuelle
+	// Returns the current Y position.
 	return $this->GetY();
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// ajoute une ligne avec couleur de fond
-//
-// $aW : largeur
-// $aH : hauteur
-// $aHeader : entete
-// $aContent : contenu
-// $aTplt : gabarit
-// $aColorF : couleur de la police
-// $aColorBk : couleur de fond
+/**
+ * Adds a line with a background color.
+ *
+ * @param int $aW            Width.
+ * @param int $aH            Height.
+ * @param string $aHeader    Header.
+ * @param string $aContent   Content.
+ * @param array $aTplt       Template.
+ * @param array $aColorF     Text color.
+ * @param array $aColorBk    Background color.
+ */
 private function buildLine($aW, $aH, $aHeader='', $aContent='', $aTplt='', $aColorF=array('r'=>0, 'g'=>0, 'b'=>0), $aColorBk=array('r'=>255, 'g'=>255, 'b'=>255)){
 	if(empty($aHeader) || empty($aTplt)) return 0;
 	if(empty($aContent)) $aContent = $aHeader;
-	// initialise la typo et les couleurs
+	// Initializes the font and color.
 	$this->SetFont('', $aTplt['fontFace'], $aTplt['fontSize']);
 	$this->SetTextColor($aColorF['r'], $aColorF['g'], $aColorF['b']);
-	// dessine le fond
+	// Draws the background.
 	if(!($aColorBk['r']==255 && $aColorBk['g']==255 && $aColorBk['b']==255)){
 		$this->SetFillColor($aColorBk['r'], $aColorBk['g'], $aColorBk['b']);
 		$this->Rect($aTplt['margin'][3], $this->GetY()+$aTplt['margin'][0], $aW+$aTplt['padding'][1]+$aTplt['padding'][3], $aH+$aTplt['padding'][0]+$aTplt['padding'][2], 'F');
 	}
-	// initialise et sauvegarde la position
+	// Initializes and saves the position.
 	$this->SetXY($aTplt['margin'][3]+$aTplt['padding'][3], $this->GetY()+$aTplt['margin'][0]+$aTplt['padding'][0]);
 	$posX = $this->GetX();
 	$posY = $this->GetY();
 	$posMaxY = 0;
-	// affiche la ligne
+	// Displays the line.
 	foreach($aContent as $k=>$v){
 		$this->MultiCell($aHeader[$k]['width'], $aTplt['lineHeight'], utf8_decode(is_array($v) ? $v['text']:$v), 0, $aHeader[$k]['align']);
-		// enregistre la hauteur max
+		// Saves the maximum height.
 		if($this->GetY()>$posMaxY) $posMaxY = $this->GetY();
-		// calcul la nouvelle position X en rajoutant la largeur de colonne
+		// Computes the new X position by accounting for the column's width.
 		$posX += $aHeader[$k]['width'];
-		// MultiCell crée un renvoi de ligne. Il faut se replacer
+		// MultiCell adds a line break ; the position needs to be reset.
 		$this->SetXY($posX, $posY);
 	}
-	// se replace à la marge gauche et sous la dernière ligne crée
+	// Reset the position below the last created line, at [left margin] from the left edge.
 	$this->SetXY($this->lMargin, $posMaxY+$aTplt['padding'][2]+$aTplt['margin'][2]);
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// Tableau avec MultiCells : http://www.fpdf.org/fr/script/script3.php
+/**
+ * Table with MultiCells.
+ *
+ * @link http://www.fpdf.org/en/script/script3.php
+ */
 private function NbLines($w, $txt){
-	//Calcule le nombre de lignes qu'occupe un MultiCell de largeur w
+	// Computes how many lines a MultiCell span if its width is w.
 	$cw = $this->CurrentFont['cw'];
 	if($w==0) $w = $this->w-$this->rMargin-$this->x;
 	$wmax = ($w-2*$this->cMargin)*1000/$this->FontSize;
@@ -321,33 +334,32 @@ private function NbLines($w, $txt){
 	}
 	return $nl;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// entete
-//
+/**
+ * Header.
+ */
 function Header(){
 	if(!empty($this->logoUrl)){
 		$this->Image($this->logoUrl, $this->logoPosX, $this->logoPosY, $this->logoWidth);
 		$this->Ln(12);
 	}
-	// elements d'entete
+	// Header elements.
 	foreach($this->elementLst['header'] as $v){
 		$yMax = ( isset( $yMax ) ) ? $yMax : 0;
 		$yMax = max($yMax, $this->prepareLine($v['text'], $this->template[$v['id']]));
 	}
-	// entete du tableau
+	// Table header.
 	if(!empty($this->productHead)){
 		$this->SetY($yMax);
 		$tplt = $this->template['productHead'];
 		$this->buildLine($this->productWidth, $tplt['lineHeight'], $this->productHead, $this->productHead, $tplt, $tplt['color'], $tplt['backgroundColor']);
 	}
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// pied de page
-//
+/**
+ * Footer.
+ */
 function Footer(){
 	foreach($this->elementLst['footer'] as $v){
 		$this->prepareLine($v['text'], $this->template[$v['id']]);
 	}
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
 }
