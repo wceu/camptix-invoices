@@ -2,7 +2,7 @@
 /**
  * Plugin name: Camptix Invoices
  * Description: Allow Camptix user to send invoices when an attendee buys a ticket
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Willy Bahuaud, Simon Janin
  * Author URI: https://2018.wptech.io
  * Text Domain: invoices-camptix
@@ -12,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CTX_INV_VER', '1.0.0' );
+define( 'CTX_INV_VER', '1.0.1' );
 define( 'CTX_INV_URL', untrailingslashit( plugin_dir_url( __FILE__ ) ) );
 define( 'CTX_INV_ADMIN_URL', CTX_INV_URL . '/admin' );
 
