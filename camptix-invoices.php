@@ -73,20 +73,15 @@ function register_tix_invoice() {
  * @param object $post The post.
  */
 function ctx_invoice_link( $post ) {
+
 	if ( 'tix_invoice' !== $post->post_type || 'publish' !== $post->post_status ) {
 		return false;
 	}//end if
+
 	$invoice_number = get_post_meta( $post->ID, 'invoice_number', true );
 	$auth           = get_post_meta( $post->ID, 'auth', true );
-	vprintf(
-		'<div class="misc-pub-section"><p>%3$s <strong>%4$s</strong></p><a href="%s" class="button button-secondary" target="_blank">%2$s</a></div>',
-		array(
-			esc_attr( admin_url( 'admin-post.php?action=camptix-invoice.get&invoice_id=' . $post->ID . '&invoice_auth=' . $auth ) ),
-			esc_html__( 'Print invoice', 'invoices-camptix' ),
-			esc_html__( 'Invoice number', 'invoices-camptix' ),
-			esc_attr( $invoice_number ),
-		)
-	);
+
+	include CTX_INV_DIR . '/includes/views/invoice-download-button.php';
 }
 add_action( 'post_submitbox_misc_actions', 'ctx_invoice_link' );
 
