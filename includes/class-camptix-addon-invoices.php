@@ -178,22 +178,10 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 			)
 		);
 
-		vprintf(
-			'<div class="camptix-media"><div class="camptix-invoice-logo-preview-wrapper" data-imagewrapper>
-			%4$s
-		</div>
-		<input data-set type="button" class="button button-secondary" value="%3$s" />
-		<input data-unset type="button" class="button button-secondary" value="%5$s"%6$s/>
-		<input type="hidden" name=camptix_options[%1$s] data-field="image_attachment" value="%2$s"></div>',
-			array(
-				esc_attr( $args['id'] ),
-				esc_attr( $args['value'] ),
-				esc_attr__( 'Pick a logo', 'invoices-camptix' ),
-				! empty( $args['value'] ) ? wp_get_attachment_image( $args['value'], 'thumbnail', '', array() ) : '', // @codingStandardsIgnoreLine
-				esc_attr__( 'Remove logo', 'invoices-camptix' ),
-				empty( $args['value'] ) ? ' style="display:none;"' : '', // @codingStandardsIgnoreLine
-			)
-		);
+		$id    = $args['id'];
+		$value = $args['value'];
+
+		include CTX_INV_DIR . '/includes/views/logo-field.php';
 	}
 
 	/**
