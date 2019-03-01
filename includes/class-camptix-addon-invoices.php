@@ -135,17 +135,16 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @param array $args Arguments.
 	 */
 	public static function date_format_callback( $args ) {
-		vprintf(
-			'<input type="text" value="%2$s" name="camptix_options[%1$s]">
-		<p class="description">Date format to use on the invoice, as a PHP Date formatting string (default \'d F Y\' formats dates as %3$s).<br><a href="%4$s">%5$s</a></p>',
-			array(
-				esc_attr( $args['id'] ),
-				esc_attr( $args['value'] ),
-				esc_html( date( 'd F Y' ) ),
-				esc_attr__( 'https://codex.wordpress.org/Formatting_Date_and_Time', 'invoices-camptix' ),
-				esc_html__( 'Documentation on date and time formatting', 'invoices-camptix' ),
-			)
+
+		$id          = $args['id'];
+		$value       = $args['value'];
+		$description = sprintf(
+			// translators: %s is a date
+			__( 'Date format to use on the invoice, as a PHP Date formatting string (default \'d F Y\' formats dates as %s)', 'invoices-camptix' ),
+			date( 'd F Y' )
 		);
+
+		include CTX_INV_DIR . '/includes/views/date-format-field.php';
 	}
 
 	/**

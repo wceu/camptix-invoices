@@ -2,7 +2,7 @@
 
 defined( 'WPINC' ) || die();
 
-/** @var \DateTime $start_date */
+/** @var string $invoice_vat_number */
 
 ?>
 
@@ -49,7 +49,7 @@ defined( 'WPINC' ) || die();
 				</td>
 			</tr>
 
-			<?php if ( ! empty( $invoice_number ) ) : ?>
+			<?php if ( ! empty( $invoice_vat_number ) ) : ?>
 				<tr>
 					<td class="tix-left">
 						<label for="invoice-vat-number">

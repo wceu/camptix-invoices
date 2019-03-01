@@ -382,8 +382,8 @@ add_action( 'rest_api_init', 'ctx_register_form_route' );
  */
 function ctx_invoice_form() {
 
-	$opt            = get_option( 'camptix_options' );
-	$invoice_number = $opt['invoice-vat-number'];
+	$opt                = get_option( 'camptix_options' );
+	$invoice_vat_number = $opt['invoice-vat-number'];
 
 	ob_start();
 	include CTX_INV_DIR . '/includes/views/invoice-form.php';
