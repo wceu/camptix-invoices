@@ -119,8 +119,11 @@ add_action( 'add_meta_boxes_tix_invoice', 'ctx_register_invoice_metabox' );
  * @param object $args The args.
  */
 function ctx_invoice_metabox_editable( $args ) {
-	$order = get_post_meta( $args->ID, 'original_order', true );
-	$metas = get_post_meta( $args->ID, 'invoice_metas', true );
+
+	$order              = get_post_meta( $args->ID, 'original_order', true );
+	$metas              = get_post_meta( $args->ID, 'invoice_metas', true );
+	$opt                = get_option( 'camptix_options' );
+	$invoice_vat_number = $opt['invoice-vat-number'];
 
 	if ( ! is_array( $order ) ) {
 		$order = array();
@@ -129,86 +132,13 @@ function ctx_invoice_metabox_editable( $args ) {
 		$metas = array();
 	}//end if
 
-	wp_nonce_field( 'edit-invoice-' . get_current_user_id() . '-' . $args->ID, 'edit-invoice' );
-	echo '<h3>' . esc_html__( 'Order details', 'invoices-camptix' ) . '</h3>';
-	$item_line = '<tr>
-		<td><input type="text" value="%2$s" name="order[items][%1$d][name]" class="widefat"></td><!-- name -->
-		<td><input type="number" min="0" value="%3$.2f" name="order[items][%1$d][price]" class="widefat"></td><!-- price -->
-		<td><input type="number" min="0" value="%4$s" name="order[items][%1$d][quantity]" class="widefat"></td><!-- qty -->
-		</tr>';
-	vprintf(
-		'<table class="widefat"><thead><tr>
-		<th>%1$s</th>
-		<th>%2$s</th>
-		<th>%3$s</th>
-		</tr></thead><tbody>',
-		array(
-			esc_html__( 'Title', 'invoices-camptix' ),
-			esc_html__( 'Unit price', 'invoices-camptix' ),
-			esc_html__( 'Quantity', 'invoices-camptix' ),
-		)
-	);
-
 	if ( empty( $order['items'] ) || ! is_array( $order['items'] ) ) {
 		$order['items'] = array();
 	}//end if
-	foreach ( $order['items'] as $k => $item ) {
-		vprintf( $item_line, // @codingStandardsIgnoreLine
-			array(
-				esc_attr( $k ),
-				esc_attr( $item['name'] ),
-				esc_attr( $item['price'] ),
-				esc_attr( $item['quantity'] ),
-			)
-		);
-	}//end foreach
-	vprintf( $item_line, // @codingStandardsIgnoreLine
-		array(
-			count( $order['items'] ) + 1,
-			'',
-			'',
-			'',
-		)
-	);
-	echo '</tbody></table>';
-	$table_content = '<tr><th scope="row"><label for="order[total]">%1$s</label></th>
-	<td><input
-	type="number"
-	min="0"
-	value="%2$.2f"
-	name="order[total]"
-	id="order[total]"/></td></tr>
-	<tr><th scope="row"><label for="invoice_metas[name]">%3$s</label></th>
-	<td><input name="invoice_metas[name]" id="invoice_metas[name]" value="%4$s" type="text" class="widefat"/><td></tr>
-	<tr><th scope="row"><label for="invoice_metas[email]">%5$s</label></th>
-	<td><input name="invoice_metas[email]" id="invoice_metas[email]" value="%6$s" type="email" class="widefat"/><td></tr>
-	<tr><th scope="row"><label for="invoice_metas[address]">%7$s</label></th>
-	<td><textarea name="invoice_metas[address]" id="invoice_metas[address]" class="widefat">%8$s</textarea><td></tr>';
 
-	$opt = get_option( 'camptix_options' );
-	if ( ! empty( $opt['invoice-vat-number'] ) ) {
-		$table_content .= '<tr><th scope="row"><label for="invoice_metas[vat-number]">%9$s</label></th>
-		<td><input name="invoice_metas[vat-number]" id="invoice_metas[vat-number]" value="%10$s" type="text" class="widefat"/><td></tr>';
-	}//end if
+	wp_nonce_field( 'edit-invoice-' . get_current_user_id() . '-' . $args->ID, 'edit-invoice' );
 
-	$table = '<table class="form-table">' . $table_content . '</table>';
-	$args  = array(
-		esc_html__( 'Total amount', 'invoices-camptix' ),
-		esc_attr( empty( $order['total'] ) ? '0' : $order['total'] ),
-		esc_html__( 'Customer', 'invoices-camptix' ),
-		esc_attr( empty( $metas['name'] ) ? '' : $metas['name'] ),
-		esc_html__( 'Contact email', 'invoices-camptix' ),
-		esc_attr( empty( $metas['email'] ) ? '' : $metas['email'] ),
-		esc_html__( 'Customer Address', 'invoices-camptix' ),
-		esc_textarea( empty( $metas['address'] ) ? '' : $metas['address'] ),
-	);
-
-	if ( ! empty( $opt['invoice-vat-number'] ) ) {
-		$args[] = esc_html__( 'VAT number', 'invoices-camptix' );
-		$args[] = esc_textarea( empty( $metas['vat-number'] ) ? '' : $metas['vat-number'] );
-	}//end if
-
-	vprintf( $table, $args ); //@codingStandardsIgnoreLine
+	include CTX_INV_DIR . '/includes/views/editable-invoice-metabox.php';
 }
 
 /**

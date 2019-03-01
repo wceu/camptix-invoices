@@ -3,6 +3,9 @@
 defined( 'WPINC' ) || die();
 
 /** @var array $order */
+/** @var array $metas */
+/** @var string $invoice_vat_number */
+/** @var int $txn_id */
 
 ?>
 
