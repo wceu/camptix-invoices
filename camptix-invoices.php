@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 define( 'CTX_INV_VER', '1.0.1' );
 define( 'CTX_INV_URL', untrailingslashit( plugin_dir_url( __FILE__ ) ) );
+define( 'CTX_INV_DIR', untrailingslashit( dirname( __FILE__ ) ) );
 define( 'CTX_INV_ADMIN_URL', CTX_INV_URL . '/admin' );
 
 /**
@@ -39,7 +40,8 @@ add_action( 'camptix_load_addons', 'load_camptix_invoices' );
  */
 function register_tix_invoice() {
 	register_post_type(
-		'tix_invoice', array(
+		'tix_invoice',
+		array(
 			'label'        => __( 'Invoices', 'invoices-camptix' ),
 			'labels'       => array(
 				'name'           => __( 'Invoices', 'invoices-camptix' ),
@@ -360,47 +362,32 @@ add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
 /**
  * Register REST API endpoint to serve invoice details form
  */
-add_action(
-	'rest_api_init', function () {
-
-		$opt = get_option( 'camptix_options' );
+function ctx_register_form_route() {
+	$opt = get_option( 'camptix_options' );
 		if ( ! empty( $opt['invoice-active'] ) ) {
 			register_rest_route(
-				'camptix-invoices/v1', '/invoice-form', array(
+				'camptix-invoices/v1',
+				'/invoice-form',
+				array(
 					'methods'  => 'GET',
 					'callback' => 'ctx_invoice_form',
 				)
 			);
 		}//end if
-	}
-);
+}
+add_action( 'rest_api_init', 'ctx_register_form_route' );
 
 /**
  * Invoice form generator.
  */
 function ctx_invoice_form() {
 
-	$fields = array();
+	$opt            = get_option( 'camptix_options' );
+	$invoice_number = $opt['invoice-vat-number'];
 
-	$fields['main']     = '<input type="checkbox" value="1" name="camptix-need-invoice" id="camptix-need-invoice"/> <label for="camptix-need-invoice">' . __( 'I need an invoice', 'invoices-camptix' ) . '</label>';
-	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-email">' . __( 'Email for the invoice to be sent to', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
-		<td class="tix-right"><input type="text" name="invoice-email" id="invoice-email" pattern="^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+.[a-zA-Z0-9-.]+$"></td>';
-	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-name">' . __( 'Name or organisation that the invoice should be made out to', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
-		<td class="tix-right"><input type="text" name="invoice-name" id="invoice-name"></td>';
-	$fields['hidden'][] = '<td class="tix-left"><label for="invoice-address">' . __( 'Street address', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
-		<td class="tix-right"><textarea name="invoice-address" id="invoice-address" rows="2"></textarea></td>';
-
-	$opt = get_option( 'camptix_options' );
-	if ( ! empty( $opt['invoice-vat-number'] ) ) {
-		$fields['hidden'][] = '<td class="tix-left"><label for="invoice-vat-number">' . __( 'VAT number', 'invoices-camptix' ) . ' <span class="tix-required-star">*</span></label></td>
-			<td class="tix-right"><input type="text" name="invoice-vat-number" id="invoice-vat-number"></td>';
-	}//end if
-
-	$fields = apply_filters( 'camptix_invoices_invoice_details_form_fields', $fields );
-
-	$fields_formatted = $fields['main'] . '<table class="camptix-invoice-details tix_tickets_table tix_invoice_table"><tbody><tr>' . implode( '</tr><tr>', $fields['hidden'] ) . '</tr></tbody></table>';
-
-	$form = apply_filters( 'camptix_invoice_invoice_details_form', '<div class="camptix-invoice-toggle-wrapper">' . $fields_formatted . '</div>', $fields );
+	ob_start();
+	include CTX_INV_DIR . '/includes/views/invoice-form.php';
+	$form = ob_get_clean();
 
 	wp_send_json( array( 'form' => $form ) );
 }
