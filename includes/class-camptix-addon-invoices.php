@@ -153,14 +153,12 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @param array $args Arguments.
 	 */
 	public static function current_number_callback( $args ) {
-		vprintf(
-			'<p>' . __( "The next invoice's number will be", 'invoices-camptix' ) . ' %3$s<input type="number" min="1" value="%2$d" name="camptix_options[%1$s]" class="small-text">%4$s</p>', array(
-				esc_attr( $args['id'] ),
-				esc_attr( $args['value'] ),
-				$args['yearly'] ? '<code>' . esc_html( date( 'Y-' ) ) : '',
-			$args['yearly'] ? '</code>' : '', // @codingStandardsIgnoreLine
-			)
-		);
+
+		$id     = $args['id'];
+		$value  = $args['value'];
+		$yearly = $args['yearly'];
+
+		include CTX_INV_DIR . '/includes/views/next-invoice-number-field.php';
 	}
 
 	/**
