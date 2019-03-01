@@ -217,73 +217,14 @@ function ctx_invoice_metabox_editable( $args ) {
  * @param object $args The args.
  */
 function ctx_invoice_metabox_sent( $args ) {
-	$order = get_post_meta( $args->ID, 'original_order', true );
-	$metas = get_post_meta( $args->ID, 'invoice_metas', true );
-	echo '<h3>' . esc_html__( 'Order details', 'invoices-camptix' ) . '</h3>';
-	$item_line = '<tr>
-		<td>%1$s</td><!-- name -->
-		<td>%2$.2f</td><!-- price -->
-		<td>%3$s</td><!-- qty -->
-		</tr>';
-	vprintf(
-		'<table class="widefat"><thead><tr>
-		<th>%1$s</th>
-		<th>%2$s</th>
-		<th>%3$s</th>
-		</tr></thead><tbody>',
-		array(
-			esc_html__( 'Title', 'invoices-camptix' ),
-			esc_html__( 'Unit price', 'invoices-camptix' ),
-			esc_html__( 'Quantity', 'invoices-camptix' ),
-		)
-	);
-	foreach ( $order['items'] as $k => $item ) {
-		vprintf( $item_line, // @codingStandardsIgnoreLine
-			array(
-				esc_attr( $item['name'] ),
-				esc_attr( $item['price'] ),
-				esc_attr( $item['quantity'] ),
-			)
-		);
-	}//end foreach
-	echo '</tbody></table>';
-	$table_content = '<tr><th scope="row">%1$s</th>
-		<td>%2$.2f</td></tr>
-		<tr><th scope="row">%3$s</th>
-		<td>%4$s<td></tr>
-		<tr><th scope="row">%5$s</th>
-		<td>%6$s<td></tr>
-		<tr><th scope="row">%7$s</th>
-		<td>%8$s<td></tr>';
 
-	$opt = get_option( 'camptix_options' );
-	if ( ! empty( $opt['invoice-vat-number'] ) ) {
-		$table_content .= '<tr><th scope="row">%9$s</th>
-		<td>%10$s<td></tr>';
-	}//end if
+	$order              = get_post_meta( $args->ID, 'original_order', true );
+	$metas              = get_post_meta( $args->ID, 'invoice_metas', true );
+	$opt                = get_option( 'camptix_options' );
+	$invoice_vat_number = $opt['invoice-vat-number'];
+	$txn_id             = isset( $metas['transaction_id'] ) ? $metas['transaction_id'] : '';
 
-	$txn_id = isset( $metas['transaction_id'] ) ? $metas['transaction_id'] : '';
-
-	$table = '<table class="form-table">' . $table_content . '</table>';
-	$args  = array(
-		esc_html__( 'Total amount', 'invoices-camptix' ),
-		esc_html( $order['total'] ),
-		esc_html__( 'Customer', 'invoices-camptix' ),
-		esc_html( $metas['name'] ),
-		esc_html__( 'Contact email', 'invoices-camptix' ),
-		esc_html( $metas['email'] ),
-		esc_html__( 'Customer Address', 'invoices-camptix' ),
-		wp_kses( nl2br( $metas['address'] ), array( 'br' => true ) ),
-		esc_html__( 'Transaction ID', 'invoices-camptix' ),
-		esc_html( $txn_id ),
-	);
-
-	if ( ! empty( $opt['invoice-vat-number'] ) ) {
-		$args[] = esc_html__( 'VAT number', 'invoices-camptix' );
-		$args[] = esc_html( $metas['vat-number'] );
-	}//end if
-
-	vprintf( $table, $args ); //@codingStandardsIgnoreLine
+	include CTX_INV_DIR . '/includes/views/sent-invoice-metabox.php';
 }
 
 /**
