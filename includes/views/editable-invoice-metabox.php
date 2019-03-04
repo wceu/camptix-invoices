@@ -28,20 +28,20 @@ defined( 'WPINC' ) || die();
 				<input type="text" value="<?php echo esc_html( $item['name'] ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][name]" class="widefat">
 			</td><!-- name -->
 			<td>
-				<input type="number" min="0" value="<?php echo esc_html( $item['price'] ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][price]" class="widefat">
+				<input type="number" min="0" value="<?php echo esc_attr( number_format_i18n( $item['price'], 2 ) ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][price]" class="widefat">
 			</td><!-- price -->
 			<td>
-				<input type="number" min="0" value="<?php echo esc_html( $item['quantity'] ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][quantity]" class="widefat">
+				<input type="number" min="0" value="<?php echo esc_attr( number_format_i18n( $item['quantity'] ) ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][quantity]" class="widefat">
 			</td><!-- qty -->
 		</tr>
 
+	<?php endforeach; ?>
+
 		<tr>
 			<td><input type="text" value="" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][name]" class="widefat"></td><!-- name -->
-			<td><input type="number" min="0" value="" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][price]" class="widefat"></td><!-- price -->
+			<td><input type="number" min="0" value="<?php echo esc_attr( number_format_i18n( 0, 2 ) ); ?>" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][price]" class="widefat"></td><!-- price -->
 			<td><input type="number" min="0" value="" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][quantity]" class="widefat"></td><!-- qty -->
 		</tr>
-
-	<?php endforeach; ?>
 
 	</tbody>
 </table>
@@ -55,7 +55,7 @@ defined( 'WPINC' ) || die();
 			<input
 				type="number"
 				min="0"
-				value="<?php echo esc_attr( empty( $order['total'] ) ? '0' : $order['total'] ); ?>"
+				value="<?php echo esc_attr( number_format_i18n( empty( $order['total'] ) ? '0' : $order['total'] ), 2 ); ?>"
 				name="order[total]"
 				id="order[total]"
 			/>

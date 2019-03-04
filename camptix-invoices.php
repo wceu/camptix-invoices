@@ -3,8 +3,8 @@
  * Plugin name: Camptix Invoices
  * Description: Allow Camptix user to send invoices when an attendee buys a ticket
  * Version: 1.0.1
- * Author: Willy Bahuaud, Simon Janin
- * Author URI: https://2018.wptech.io
+ * Author: Willy Bahuaud, Simon Janin, Antonio Villegas, Mathieu Sarrasin
+ * Author URI: https://central.wordcamp.org/
  * Text Domain: invoices-camptix
  *
  * @package Camptix_Invoices

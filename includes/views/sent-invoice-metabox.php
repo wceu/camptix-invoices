@@ -26,8 +26,8 @@ defined( 'WPINC' ) || die();
 
 		<tr>
 			<td><?php echo esc_html( $item['name'] ); ?></td><!-- name -->
-			<td><?php echo esc_html( $item['price'] ); ?></td><!-- price -->
-			<td><?php echo esc_html( $item['quantity'] ); ?></td><!-- qty -->
+			<td><?php echo esc_html( number_format_i18n( $item['price'], 2 ) ); ?></td><!-- price -->
+			<td><?php echo esc_html( number_format_i18n( $item['quantity'] ) ); ?></td><!-- qty -->
 		</tr>
 
 	<?php endforeach; ?>
@@ -38,7 +38,7 @@ defined( 'WPINC' ) || die();
 <table class="form-table">
 	<tr>
 		<th scope="row"><?php echo esc_html__( 'Total amount', 'invoices-camptix' ); ?></th>
-		<td><?php echo esc_html( $order['total'] ); ?></td>
+		<td><?php echo esc_html( number_format_i18n( $order['total'], 2 ) ); ?></td>
 	</tr>
 	<tr>
 		<th scope="row"><?php echo esc_html__( 'Customer', 'invoices-camptix' ); ?></th>
