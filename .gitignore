@@ -23,6 +23,7 @@ nbproject
 *.sublime-workspace
 .vscode
 *.swp
+mkver
 
 # Folders to ignore
 .hg

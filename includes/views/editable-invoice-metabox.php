@@ -55,7 +55,7 @@ defined( 'WPINC' ) || die();
 			<input
 				type="number"
 				min="0"
-				value="<?php echo esc_attr( number_format_i18n( empty( $order['total'] ) ? '0' : $order['total'] ), 2 ); ?>"
+				value="<?php echo esc_attr( number_format_i18n( empty( $order['total'] ) ? '0' : $order['total'], 2 ) ); ?>"
 				name="order[total]"
 				id="order[total]"
 			/>
