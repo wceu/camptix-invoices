@@ -202,7 +202,7 @@ add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
  * @param int $id The invoice id.
  */
 function ctx_generate_invoice_document_on_publish( $id ) {
-	// TODO
+	// TODO.
 }
 add_action( 'publish_tix_invoice', 'ctx_generate_invoice_document_on_publish', 10, 2 );
 
@@ -228,16 +228,16 @@ add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
  */
 function ctx_register_form_route() {
 	$opt = get_option( 'camptix_options' );
-		if ( ! empty( $opt['invoice-active'] ) ) {
-			register_rest_route(
-				'camptix-invoices/v1',
-				'/invoice-form',
-				array(
-					'methods'  => 'GET',
-					'callback' => 'ctx_invoice_form',
-				)
-			);
-		}//end if
+	if ( ! empty( $opt['invoice-active'] ) ) {
+		register_rest_route(
+			'camptix-invoices/v1',
+			'/invoice-form',
+			array(
+				'methods'  => 'GET',
+				'callback' => 'ctx_invoice_form',
+			)
+		);
+	}//end if
 }
 add_action( 'rest_api_init', 'ctx_register_form_route' );
 
@@ -259,7 +259,7 @@ function ctx_invoice_form() {
 /**
  * Recovers a path for a PDF invoice.
  *
- * @param int    $invoice The invoice id.
+ * @param int $invoice_id The invoice id.
  */
 function ctx_get_invoice( $invoice_id ) {
 	$invoice_document = get_post_meta( $invoice_id, 'invoice_document', true );
@@ -282,7 +282,7 @@ function ctx_get_invoice( $invoice_id ) {
 /**
  * Recovers the URL for a PDF invoice.
  *
- * @param int $invoice The invoice id.
+ * @param int $invoice_id The invoice id.
  */
 function ctx_get_invoice_url( $invoice_id ) {
 	$invoice_document = get_post_meta( $invoice_id, 'invoice_document', true );

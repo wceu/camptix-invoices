@@ -9,7 +9,7 @@ defined( 'WPINC' ) || die();
 ?>
 
 <p>
-	<?php echo esc_html__( "The next invoice number will be", 'invoices-camptix' ); ?>
+	<?php echo esc_html__( 'The next invoice number will be', 'invoices-camptix' ); ?>
 
 	<?php
 	if ( $yearly ) {

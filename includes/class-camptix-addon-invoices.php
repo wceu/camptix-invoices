@@ -139,7 +139,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$id          = $args['id'];
 		$value       = $args['value'];
 		$description = sprintf(
-			// translators: %s is a date
+			// translators: %s is a date.
 			__( 'Date format to use on the invoice, as a PHP Date formatting string (default \'d F Y\' formats dates as %s)', 'invoices-camptix' ),
 			date( 'd F Y' )
 		);
@@ -385,6 +385,11 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		wp_mail( $invoice_metas['email'], $subject, $message, $headers, $attachments );
 	}
 
+	/**
+	 * Create a PDF document for the given invoice.
+	 *
+	 * @param int $invoice_id The invoice ID.
+	 */
 	public static function createInvoiceDocument( $invoice_id ) {
 
 		$invoice_number = get_post_meta( $invoice_id, 'invoice_number', true );

@@ -23,9 +23,9 @@ defined( 'WPINC' ) || die();
 		class="button button-secondary"
 		value="<?php echo esc_attr__( 'Remove logo', 'invoices-camptix' ); ?>"
 		<?php
-			if ( empty( $value ) ) {
-				echo 'style="display:none;"';
-			}
+		if ( empty( $value ) ) {
+			echo 'style="display:none;"';
+		}
 		?>
 	/>
 	<input type="hidden" name=camptix_options[<?php echo esc_attr( $id ); ?>] data-field="image_attachment" value="<?php echo esc_attr( $value ); ?>">

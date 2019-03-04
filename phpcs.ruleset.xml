@@ -1,194 +1,176 @@
-<?xml version="1.0"?>
-<ruleset name="WordPress Coding Standards">
-	<!-- See https://github.com/squizlabs/PHP_CodeSniffer/wiki/Annotated-ruleset.xml -->
-	<!-- See https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/blob/develop/WordPress-Core/ruleset.xml -->
+<?xml version="1.0" ?>
+<ruleset name="WordCamp.org Coding Standards">
+	<description>Apply customized version of WordPress Coding Standards to WordCamp.org PHP scripts.</description>
 
-	<!-- Set a description for this ruleset. -->
-	<description>A custom set of code standard rules to check for WordPress themes and plugins.</description>
+	<!--
+		Setup instructions:
 
-	<!-- Include the WordPress ruleset, with exclusions. -->
-	<rule ref="WordPress">
-		<exclude name="Generic.CodeAnalysis.EmptyStatement.DetectedCATCH" />
-		<exclude name="Generic.CodeAnalysis.EmptyStatement.DetectedIF" />
-		<exclude name="Generic.CodeAnalysis.EmptyStatement.DetectedELSE" />
-		<exclude name="Generic.CodeAnalysis.ForLoopWithTestFunctionalCall.NotAllowed" />
-		<exclude name="Generic.Commenting.DocComment.LongNotCapital" />
-		<exclude name="Generic.Commenting.DocComment.MissingShort" />
-		<exclude name="Generic.Commenting.DocComment.ShortNotCapital" />
-		<exclude name="Generic.Commenting.DocComment.SpacingAfter" />
-		<exclude name="Generic.Commenting.DocComment.SpacingBeforeTags" />
-		<exclude name="Generic.ControlStructures.InlineControlStructure.NotAllowed" />
-		<!-- <exclude name="Generic.Files.EndFileNewline.NotFound" /> -->
-		<exclude name="Generic.Files.LineEndings.InvalidEOLChar" />
-		<exclude name="Generic.Files.LowercasedFilename.NotFound" />
-		<!-- <exclude name="Generic.Formatting.DisallowMultipleStatements.SameLine" /> -->
-		<!-- <exclude name="Generic.Formatting.SpaceAfterCast.NoSpace" /> -->
-		<exclude name="Generic.Functions.OpeningFunctionBraceKernighanRitchie.BraceOnNewLine" />
-		<exclude name="Generic.Functions.OpeningFunctionBraceKernighanRitchie.ContentAfterBrace" />
-		<exclude name="Generic.Functions.OpeningFunctionBraceKernighanRitchie.SpaceBeforeBrace" />
-		<exclude name="Generic.PHP.DeprecatedFunctions.Deprecated" />
-		<exclude name="Generic.PHP.ForbiddenFunctions.FoundWithAlternative" />
-		<exclude name="Generic.PHP.LowerCaseKeyword.Found" />
-		<exclude name="Generic.PHP.NoSilencedErrors.Discouraged" />
-		<exclude name="Generic.Strings.UnnecessaryStringConcat.Found" />
-		<exclude name="Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed" />
-		<exclude name="Generic.WhiteSpace.ScopeIndent.Incorrect" />
-		<exclude name="Generic.WhiteSpace.ScopeIndent.IncorrectExact" />
-		<exclude name="PEAR.Functions.FunctionCallSignature.Indent" />
-		<!-- <exclude name="PEAR.Functions.FunctionCallSignature.SpaceAfterCloseBracket" /> -->
-		<!-- <exclude name="PEAR.Functions.FunctionCallSignature.SpaceAfterOpenBracket" /> -->
-		<!-- <exclude name="PEAR.Functions.FunctionCallSignature.SpaceBeforeCloseBracket" /> -->
-		<!-- <exclude name="PEAR.Functions.FunctionCallSignature.SpaceBeforeOpenBracket" /> -->
-		<!-- <exclude name="Squiz.Commenting.BlockComment.NoEmptyLineBefore" /> -->
-		<!-- <exclude name="Squiz.Commenting.BlockComment.NoNewLine" /> -->
-		<exclude name="Squiz.Commenting.BlockComment.WrongEnd" />
-		<exclude name="Squiz.Commenting.ClassComment.SpacingAfter" />
-		<exclude name="Squiz.Commenting.ClassComment.Missing" />
-		<exclude name="Squiz.Commenting.ClosingDeclarationComment.Abstract" />
-		<!-- <exclude name="Squiz.Commenting.DocCommentAlignment.SpaceBeforeStar" /> -->
-		<exclude name="Squiz.Commenting.EmptyCatchComment.Missing" />
-		<exclude name="Squiz.Commenting.FileComment.Missing" />
-		<exclude name="Squiz.Commenting.FileComment.MissingPackageTag" />
-		<exclude name="Squiz.Commenting.FileComment.SpacingAfterComment" />
-		<exclude name="Squiz.Commenting.FileComment.SpacingAfterOpen" />
-		<exclude name="Squiz.Commenting.FileComment.WrongStyle" />
-		<exclude name="Squiz.Commenting.FunctionComment.EmptyThrows" />
-		<exclude name="Squiz.Commenting.FunctionComment.ExtraParamComment" />
-		<exclude name="Squiz.Commenting.FunctionComment.InvalidNoReturn" />
-		<exclude name="Squiz.Commenting.FunctionComment.InvalidReturnVoid" />
-		<exclude name="Squiz.Commenting.FunctionComment.Missing" />
+		1) Install PHPCS (e.g., `brew install homebrew/php/php-code-sniffer`)
+		2) Install the WP Coding Standards (https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards)
+		3) Edit CodeSniffer.conf and update `installed_paths` to point to where you installed the WP Coding Standards,
+		   and any other tweaks you want to make.
+		   See https://github.com/iandunn/dotfiles/blob/master/phpcs/CodeSniffer.conf for an example.
+		4) Make sure this file is at the project root. You can symlink it there if your `meta.(git|svn).wordpress.org`
+		   checkout is elsewhere.
+		5) `cd` to a folder inside the project and run `phpcs`. You can use the `-a` flag to run it interactively.
+		6) Run it before you generate a patch or create a commit. Setting up a git pre-commit or pre-push hook can
+		   make that automatic.
+
+		Note: It's possible to create a `phpcs.xml` file if you want to override anything here, but please make sure
+		any code you contribute conforms to this file. If you think any of the rules here should change, start a
+		discussion in #meta-wordcamp.
+
+		See these links for useful information:
+			- https://github.com/squizlabs/PHP_CodeSniffer/wiki/Annotated-ruleset.xml
+			- https://github.com/squizlabs/PHP_CodeSniffer/wiki/Customisable-Sniff-Properties
+	        - https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties
+	-->
+
+	<!-- TODO
+		Exclude 3rd party plugins/themes so this can be run from the project root without a ton of extraneous stuff
+		<exclude-pattern>/build/*</exclude-pattern>
+
+		disable WordPress.VIP.PostsPerPage.posts_per_page_posts_per_page for bin folder only
+			should that be `WordPress.VIP.PostsPerPage.posts_per_page` ?
+
+		Look through `General` and `Squiz` sniffs for anything you might want to add.
+			Is there one that detects `\Foo` instead of `use Foo`?
+			maximum nesting level?
+			function length?
+			unnecessary order-of-operations params, e.g., $foo = ( $bar || $qax ) ? 'bax' : 'quix';
+			echoing html instead of breaking php or using an external view. e.g., echo '<div>foo</div>'; should be `?> <div>foo</div> <?php` (but on multiple lines of course)
+			heredoc/nowdoc should never be used
+			var assignment immediately followed by if/while/for statement, without a blank space inbetween. maybe not in all cases, though?
+			closing divs with a comment after them. it adds clutter. when viewing source, this is an artifact from the days before browser dev tools. view in IDEs, this isn't necessary if the code is properly formatted.
+			return statement at end of function w/out blank line above it
+			no space between last @param and the @return in docblock. i know diff than core, but whitespace makes it easier to scan/read. should also have space above first @param. sometimes want no space between different types of tags, though.
+			opening/closing <?php ?> tags without a blank line after/before them, except when doing single-line like <?php foo(); ?>
+			align ? and : in multiple ternary operator statements
+			don't un-align params in function calls - e.g., multiple add_meta_box( $a, $b, $c, $d, $e, $f, $g ) calls should have the params aligned.
+			file missing `defined WPINC or die` at start
+			don't add `@return void`, just leave return empty
+			no space before ++,etc operators: e.g., `$attempt_count ++;`
+			replace explicit references to central.wordcamp.org / ID `5` with `is_main_site()` or `get_main_site_id()`
+			anonymous functions used with add_(action|filter), and maybe other places can detect w/out false positives. don't be lazy. should only be used with cases like array_filter.
+			whitespace-only changes to lines that don't have logic changes, in a commit that does have logic changes. this indicates that a commit is mixing coding standards changes w/ logic changes, which adds diff noise to the logic change. they should be separate commits.
+			unnecessary parenthesis in ternary conditions: $result = ( $condition ) ? 'foo' : 'bar'
+
+		Maybe add WordCamp\Remote_CSS\output_cached_css to customEscapingFunctions or whichever param is most appropriate
+		Maybe do something similar for set_cache_headers and nonce verification
+
+		Setup WordPress.WP.I18n text_domain property and test that it works, see https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties#internationalization-setting-your-text-domain
+
+		Don't add @package phpDoc? Clutters code without adding any real value. You know what "package" the file is part of because of the folder it's in; e.g., wp-content/plugins/wordcamp-payments
+
+		Don't mush HTML elements together on the same line, unless it's really short. `<h1>The title</h1>` is ok, but `<h1><?php echo esc_html( get_the_title() ); ?></h1>` should have the h1 tags on separate lines.
+
+		wp_enqueue_*() cachebusters should use filemtime() rather than a hardcoded int.
+
+		Combine similar `use` statements on the same line. Like, all the core PHP objects, then all the WP objects on the 2nd line, then our custom objects on the 3rd line, etc.
+	-->
+
+
+	<arg name="extensions" value="php" />
+
+	<!-- Show sniff codes in all reports -->
+	<arg value="ps"    />
+	<arg name="colors" />
+
+	<!-- Scan all (php) files in the current folder and subfolders -->
+	<file>.</file>
+
+	<rule ref="WordPress-Core">
+		<!-- I don't see anything wrong with this :) -->
+		<exclude name="Squiz.PHP.EmbeddedPhp.ContentAfterOpen" />
+		<exclude name="Squiz.PHP.EmbeddedPhp.ContentBeforeEnd" />
+
+		<!-- I've never heard a compelling argument for this, and it clutters the directory listing with irrelevant noise. -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+
+		<!-- It's often obvious what the placeholder is, so whether or not to include a comment is a judgement call. -->
+		<exclude name="WordPress.WP.I18n.MissingTranslatorsComment" />
+
+		<!-- I know it's a language construct, but it just looks better using the function call syntax. -->
+		<exclude name="PEAR.Files.IncludingFile.BracketsNotRequired" />
+
+		<!-- This requires passing a whitelist of prefixes in order to work, which is not practical for a large and varied codebase. It's also fixes a problem that we're unlikely to cause. -->
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound" />
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound" />
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound" />
+
+		<!-- Aligning things make the code more readable. `Generic.WhiteSpace.DisallowSpaceIndent` will catch accidental uses of all spaces. -->
+		<exclude name="WordPress.WhiteSpace.PrecisionAlignment.Found" />
+		<exclude name="Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma" />
+		<exclude name="WordPress.WhiteSpace.OperatorSpacing.SpacingBefore" />
+		<exclude name="WordPress.Arrays.ArrayDeclarationSpacing.SpaceBeforeArrayCloser" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.SpaceBeforeCloseBracket" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.SpaceAfterOpenBracket" />
+		<exclude name="Squiz.Strings.ConcatenationSpacing.PaddingFound" />
+
+		<!-- There are cases where having multiple items on a single line is appropriate. e.g., a list of 100 currency codes. -->
+		<exclude name="WordPress.Arrays.ArrayDeclarationSpacing.ArrayItemNoNewLine" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" />
+
+		<!-- todo get_speaker_from_user_id() meta_query should not have to line up with post_status
+		<rule ref="WordPress.Arrays.MultipleStatementAlignment">
+			<properties>
+				<property name="alignMultilineItems" value="never" />
+			</properties>
+		</rule>
+		-->
+
+		<!-- Warn about mis-aligned array items, but don't automatically "fix" them, because arrays in function calls get extra lines added.
+		     See https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/issues/1305 -->
+		<exclude phpcbf-only="true" name="PEAR.Functions.FunctionCallSignature" />
+
+		<!-- The <?php and ?> tags can't be on a line by itself inside a <textarea>, otherwise it'll add whitespace to the content. -->
+		<exclude name="Squiz.PHP.EmbeddedPhp.ContentBeforeOpen" />
+		<exclude name="Squiz.PHP.EmbeddedPhp.ContentAfterEnd"   />
+
+		<!-- trigger_error() isn't only development function. In development environments it conveniently displays an error, but in
+		     (properly configured) production environment, it logs the error instead. -->
+		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_trigger_error" />
+
+		<!-- print_r() is perfectly accepted in some circumstances, like WP_CLI commands. -->
+		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_print_r" />
+	</rule>
+
+	<rule ref="WordPress-Docs">
+		<!-- If files/variables are given descriptive names like they should be, then an explicit description is usually unnecessary, so leave this as a judgement call. -->
 		<exclude name="Squiz.Commenting.FunctionComment.MissingParamComment" />
-		<exclude name="Squiz.Commenting.FunctionComment.MissingParamName" />
+		<exclude name="Squiz.Commenting.FileComment.Missing" />
+		<exclude name="Squiz.Commenting.ClassComment.Missing" />
 		<exclude name="Squiz.Commenting.FunctionComment.MissingParamTag" />
-		<exclude name="Squiz.Commenting.FunctionComment.ParamCommentFullStop" />
-		<exclude name="Squiz.Commenting.FunctionComment.ParamNameNoCaseMatch" />
-		<exclude name="Squiz.Commenting.FunctionComment.ParamNameNoMatch" />
-		<exclude name="Squiz.Commenting.FunctionComment.ScalarTypeHintMissing" />
-		<!-- <exclude name="Squiz.Commenting.FunctionComment.SpacingAfter" /> -->
-		<exclude name="Squiz.Commenting.FunctionComment.SpacingAfterParamType" />
-		<exclude name="Squiz.Commenting.FunctionComment.ThrowsNoFullStop" />
-		<exclude name="Squiz.Commenting.FunctionComment.ThrowsNotCapital" />
-		<exclude name="Squiz.Commenting.FunctionCommentThrowTag.Missing" />
-		<exclude name="Squiz.Commenting.FunctionCommentThrowTag.WrongNumber" />
-		<exclude name="Squiz.Commenting.FunctionComment.WrongStyle" />
-		<exclude name="Squiz.Commenting.InlineComment.Empty" />
-		<exclude name="Squiz.Commenting.InlineComment.InvalidEndChar" />
-		<!-- <exclude name="Squiz.Commenting.InlineComment.NoSpaceBefore" /> -->
-		<exclude name="Squiz.Commenting.InlineComment.NotCapital" />
-		<!-- <exclude name="Squiz.Commenting.InlineComment.SpacingAfter" /> -->
-		<!-- <exclude name="Squiz.Commenting.InlineComment.SpacingBefore" /> -->
-		<exclude name="Squiz.Commenting.InlineComment.WrongStyle" />
+		<exclude name="Generic.Commenting.DocComment.MissingShort" />
 		<exclude name="Squiz.Commenting.VariableComment.Missing" />
 		<exclude name="Squiz.Commenting.VariableComment.MissingVar" />
-		<exclude name="Squiz.Commenting.VariableComment.WrongStyle" />
-		<!-- <exclude name="Squiz.ControlStructures.ControlSignature.SpaceAfterCloseBrace" /> -->
-		<!-- <exclude name="Squiz.ControlStructures.ControlSignature.SpaceAfterCloseParenthesis" /> -->
-		<exclude name="Squiz.ControlStructures.ControlSignature.SpaceAfterKeyword" />
-		<exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpaceAfterDefault" />
-		<exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingAfterOpen" />
-		<exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingAfterOpenHint" />
-		<exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpaceBeforeEquals" />
-		<exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingBeforeClose" />
-		<exclude name="Squiz.PHP.CommentedOutCode.Found" />
-		<exclude name="Squiz.Strings.DoubleQuoteUsage.NotRequired" />
-		<!-- <exclude name="Squiz.WhiteSpace.SuperfluousWhitespace.EmptyLines" /> -->
-		<!-- <exclude name="Squiz.WhiteSpace.SuperfluousWhitespace.EndLine" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.CloseBraceNewLine" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.FirstIndexNoNewline" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.FirstValueNoNewline" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.IndexNoNewline" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.NoComma" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.NoCommaAfterLast" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.NoSpaceAfterComma" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.NoSpaceAfterDoubleArrow" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.NoSpaceAfterOpenParenthesis" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.NoSpaceBeforeDoubleArrow" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.SpaceAfterArrayOpener" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.SpaceAfterDoubleArrow" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.SpaceAfterKeyword" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.SpaceBeforeComma" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.SpaceInEmptyArray" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayDeclaration.ValueNoNewline" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayKeySpacingRestrictions.NoSpacesAroundArrayKeys" /> -->
-		<!-- <exclude name="WordPress.Arrays.ArrayKeySpacingRestrictions.SpacesAroundArrayKeys" /> -->
-		<exclude name="WordPress.Classes.ClassOpeningStatement.BraceOnNewLine" />
-		<exclude name="WordPress.CSRF.NonceVerification.NoNonceVerification" />
-		<exclude name="WordPress.DB.RestrictedFunctions.mysql" />
-		<exclude name="WordPress.Files.FileName.UnderscoresNotAllowed" />
-		<exclude name="WordPress.Functions.DontExtract.extract" />
-		<exclude name="WordPress.NamingConventions.ValidFunctionName.FunctionNameInvalid" />
-		<exclude name="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid" />
-		<exclude name="WordPress.NamingConventions.ValidHookName.UseUnderscores" />
-		<exclude name="WordPress.NamingConventions.ValidVariableName.MemberNotSnakeCase" />
-		<exclude name="WordPress.NamingConventions.ValidVariableName.NotSnakeCase" />
-		<exclude name="WordPress.NamingConventions.ValidVariableName.NotSnakeCaseMemberVar" />
-		<exclude name="WordPress.NamingConventions.ValidVariableName.StringNotSnakeCase" />
-		<exclude name="WordPress.PHP.DiscouragedFunctions.Discouraged" />
-		<exclude name="WordPress.PHP.DiscouragedFunctions.DiscouragedWithAlternative" />
-		<exclude name="WordPress.PHP.StrictComparisons.LooseComparison" />
-		<exclude name="WordPress.PHP.StrictInArray.MissingTrueStrict" />
-		<!-- <exclude name="WordPress.PHP.YodaConditions.NotYoda" /> -->
-		<exclude name="WordPress.VIP.AdminBarRemoval.RemovalDetected" />
-		<exclude name="WordPress.VIP.CronInterval.ChangeDetected" />
-		<exclude name="WordPress.VIP.DirectDatabaseQuery.DirectQuery" />
-		<exclude name="WordPress.VIP.DirectDatabaseQuery.NoCaching" />
-		<exclude name="WordPress.VIP.DirectDatabaseQuery.SchemaChange" />
-		<exclude name="WordPress.VIP.FileSystemWritesDisallow.FileWriteDetected" />
-		<exclude name="WordPress.VIP.OrderByRand.orderby" />
-		<exclude name="WordPress.VIP.PostsPerPage.posts_per_page" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.count_user_posts" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.custom_role" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.cookies" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.curl" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.error_log" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.extract" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.file_get_contents" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.get_pages" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.get_posts" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.get_term_by" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.get_term_link" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.parse_url" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.prevent_path_disclosure" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.runtime_configuration" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.serialize" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.urlencode" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.url_to_postid" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.user_meta" />
-		<!-- <exclude name="WordPress.VIP.RestrictedFunctions.wp_get_post_terms" /> -->
-		<exclude name="WordPress.VIP.RestrictedFunctions.wp_redirect" />
-		<exclude name="WordPress.VIP.RestrictedFunctions.wp_remote_get" />
-		<exclude name="WordPress.VIP.RestrictedVariables.user_meta" />
-		<exclude name="WordPress.VIP.RestrictedVariables.cache_constraints" />
-		<exclude name="WordPress.VIP.SessionFunctionsUsage.session_write_close" />
-		<exclude name="WordPress.VIP.SlowDBQuery.slow_db_query" />
-		<exclude name="WordPress.VIP.SuperGlobalInputUsage.AccessDetected" />
-		<exclude name="WordPress.VIP.ValidatedSanitizedInput.InputNotSanitized" />
-		<exclude name="WordPress.VIP.ValidatedSanitizedInput.InputNotValidated" />
-		<exclude name="WordPress.VIP.ValidatedSanitizedInput.MissingUnslash" />
-		<exclude name="WordPress.Variables.GlobalVariables.OverrideProhibited" />
-		<exclude name="WordPress.WP.EnqueuedResources.NonEnqueuedScript" />
-		<exclude name="WordPress.WP.I18n.MissingSingularPlaceholder" />
-		<exclude name="WordPress.WP.I18n.MismatchedPlaceholders" />
-		<exclude name="WordPress.WP.I18n.NonSingularStringLiteralPlural" />
-		<exclude name="WordPress.WP.I18n.NonSingularStringLiteralText" />
-		<exclude name="WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet" />
-		<exclude name="WordPress.WP.PreparedSQL.NotPrepared" />
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.BlankLineAfterEnd" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.ExtraSpaceAfterCloseParenthesis" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceAfterCloseParenthesis" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceAfterOpenParenthesis" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceAfterStructureOpen" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceBetweenStructureColon" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceBeforeCloseParenthesis" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceBeforeOpenParenthesis" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.OpenBraceNotSameLine" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.ControlStructureSpacing.SpaceBeforeFunctionOpenParenthesis" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.OperatorSpacing.NoSpaceAfter" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.OperatorSpacing.NoSpaceBefore" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.OperatorSpacing.SpacingAfter" /> -->
-		<!-- <exclude name="WordPress.WhiteSpace.OperatorSpacing.SpacingBefore" /> -->
-		<exclude name="WordPress.XSS.EscapeOutput.OutputNotEscaped" />
-		<exclude name="WordPress.XSS.EscapeOutput.UnsafePrintingFunction" />
-		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+
+		<!-- I don't see how these are useful. -->
+		<exclude name="Squiz.Commenting.FileComment.MissingPackageTag" />
+
+		<!-- We really only use basic exceptions, so this is kind of overkill and tedious. -->
+		<exclude name="Squiz.Commenting.FunctionComment.EmptyThrows" />
+
+		<!-- Whitespace makes things more readable. -->
+		<exclude name="Squiz.Commenting.FileComment.SpacingAfterOpen" />
+
+		<!-- There are some valid cases of this, like in identifying a closing tag from another file; e.g., in `themes/campsite-2017/footer.php`. -->
+		<exclude name="Squiz.Commenting.InlineComment.SpacingAfter" />
+
+		<!-- It's not wrong for WordPress plugin file headers. -->
+		<exclude name="Squiz.Commenting.FileComment.WrongStyle" />
+
+		<!-- Class comments are generally not useful, so they're left out, but then PHPCS confuses the plugin headers for a class comment -->
+		<exclude name="Squiz.Commenting.ClassComment.WrongStyle" />
+		<exclude name="Squiz.Commenting.ClassComment.SpacingAfter" />
+
+		<!-- WordPress have translators comment which requires no space after `//` -->
+		<exclude name="Squiz.Commenting.InlineComment.NoSpaceBefore" />
+	</rule>
+
+	<rule ref="WordPress-Extra">
+		<!-- I think it's better to have all the `use` statements come right after the namespace line. -->
+		<exclude name="PSR2.Namespaces.NamespaceDeclaration.BlankLineAfter" />
 	</rule>
 </ruleset>
