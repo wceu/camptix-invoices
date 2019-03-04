@@ -15,6 +15,10 @@ Allow CampTix administrators to send invoices automatically when an attendee buy
 
 Allow CampTix administrators to send invoices automatically when an attendee buys a ticket.
 
+This plugin requires the installation of [Camptix Event Ticketing plugin](https://wordpress.org/plugins/camptix/).
+
+Your server must have [wkhtmltopdf](https://wkhtmltopdf.org/) installed.
+
 
 == Installation ==
 
@@ -32,11 +36,13 @@ Be warned that you can't edit or delete a published invoice, so… save it as dr
 
 = How can I customize Invoices template? =
 
-You can drop a copy of file `template.php` into your theme folder and name it `template-invoice.php`.
-Use CSS properties in this file to overide Invoice template.
+TODO
 
 
 == Changelog ==
+
+= 1.0.2 (March 2019)
+* **Improvement**. Use the PDF library already present in the WordCamp.org codebase
 
 = 1.0.1 (January 14, 2019) =
 * **Improvement**. Added an option in CampTix setting to enable invoicing
