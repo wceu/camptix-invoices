@@ -78,8 +78,8 @@ function ctx_invoice_link( $post ) {
 		return false;
 	}//end if
 
+	$invoice_url    = ctx_get_invoice_url( $post->ID );
 	$invoice_number = get_post_meta( $post->ID, 'invoice_number', true );
-	$auth           = get_post_meta( $post->ID, 'auth', true );
 
 	include CTX_INV_DIR . '/includes/views/invoice-download-button.php';
 }
@@ -197,16 +197,14 @@ function ctx_assign_invoice_number( $id ) {
 add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
 
 /**
- * Assign invoice auth on status transitions to PUBLISH
+ * Generate invoice PDF document on status transitions to PUBLISH
  *
- * @param int $id The id.
+ * @param int $id The invoice id.
  */
-function ctx_assign_invoice_auth( $id ) {
-	if ( ! get_post_meta( $id, 'auth', true ) ) {
-		update_post_meta( $id, 'auth', uniqid() );
-	}//end if
+function ctx_generate_invoice_document_on_publish( $id ) {
+	// TODO
 }
-add_action( 'publish_tix_invoice', 'ctx_assign_invoice_auth', 10, 2 );
+add_action( 'publish_tix_invoice', 'ctx_generate_invoice_document_on_publish', 10, 2 );
 
 /**
  * Disallow an invoice to be edit after publish.
@@ -259,155 +257,43 @@ function ctx_invoice_form() {
 }
 
 /**
- * Add an admin_post endpoint to get an invoice.
- *
- * @todo generate the invoice
- */
-function ctx_download_invoice() {
-	$invoice = ctx_can_get_invoice();
-	if ( ! $invoice ) {
-		wp_die( esc_html__( 'You do not have access to this invoice', 'invoices-camptix' ) );
-	}//end if
-	ctx_get_invoice( $invoice );
-}
-add_action( 'admin_post_nopriv_camptix-invoice.get', 'ctx_download_invoice' );
-add_action( 'admin_post_camptix-invoice.get', 'ctx_download_invoice' );
-
-/**
- * Generate a PDF invoice.
+ * Recovers a path for a PDF invoice.
  *
  * @param int    $invoice The invoice id.
- * @param string $target  The target.
  */
-function ctx_get_invoice( $invoice, $target = 'D' ) {
-	$obj            = get_post( $invoice );
-	$order          = get_post_meta( $invoice, 'original_order', true );
-	$metas          = get_post_meta( $invoice, 'invoice_metas', true );
-	$invoice_number = sanitize_title( get_post_meta( $invoice, 'invoice_number', true ) );
-	$opt            = get_option( 'camptix_options' );
-	$currency       = esc_html( $opt['currency'] );
+function ctx_get_invoice( $invoice_id ) {
+	$invoice_document = get_post_meta( $invoice_id, 'invoice_document', true );
+	$upload_dir       = wp_upload_dir();
 
-	require 'includes/lib/fpdf/invoicePDF.php';
+	if ( empty( $upload_dir['basedir'] ) ) {
+		wp_die( esc_html__( 'Base upload directory is empty.', 'invoices-camptix' ) );
+	}
 
-	// #1 Initialize the basic information.
-	//
-	// address of the company issuing the invoice.
-	$address   = __( 'From:', 'invoices-camptix' ) . PHP_EOL . $opt['invoice-company'];
-	$thank_you = $opt['invoice-thankyou'];
+	$invoices_dirname = $upload_dir['basedir'] . '/camptix-invoices';
+	$path             = $invoices_dirname . '/' . $invoice_document;
 
-	// customer address.
-	$args = array( $metas['name'], $metas['address'], $metas['email'] );
-	$opt  = get_option( 'camptix_options' );
-	if ( ! empty( $opt['invoice-vat-number'] ) ) {
-		array_push( $args, __( 'VAT no:', 'invoices-camptix' ) . ' ' . $metas['vat-number'] );
-	}//end if
+	if ( ! file_exists( $path ) ) {
+		wp_die( esc_html__( 'Invoice document does not exist.', 'invoices-camptix' ) );
+	}
 
-	$customer_address = __( 'To:', 'invoices-camptix' ) . PHP_EOL . implode( PHP_EOL, $args );
-
-	// CGV.
-	$cgv = $opt['invoice-tac'];
-
-	// initialize the object invoicePDF.
-	$pdf = new invoicePDF( $address, $customer_address, get_bloginfo( 'name' ) );
-
-	// set the logo.
-	$logo_url      = wp_get_attachment_url( $opt['invoice-logo'] );
-	$logo_metadata = wp_get_attachment_metadata( $opt['invoice-logo'] );
-	$pdf->setLogo( $logo_url, $logo_metadata->width );
-
-	// product header.
-	$pdf->productHeaderAddRow( __( 'Title', 'invoices-camptix' ), 75, 'L' );
-	$pdf->productHeaderAddRow( __( 'Quantity', 'invoices-camptix' ), 25, 'R' );
-	$pdf->productHeaderAddRow( __( 'Unit Price', 'invoices-camptix' ), 30, 'R' );
-	$pdf->productHeaderAddRow( __( 'Total Price', 'invoices-camptix' ), 30, 'R' );
-
-	// header of the totals.
-	$pdf->totalHeaderAddRow( 30, 'L' );
-	$pdf->vatTotalHeaderAddRow( 30, 'L' );
-
-	// custom element.
-	$pdf->elementAdd( '', 'traitEnteteProduit', 'content' );
-	$pdf->elementAdd( '', 'traitBas', 'footer' );
-
-	// #2 Create an invoice
-	//
-	// invoice title, date, text before the page number.
-	// translators: invoice number
-	$invoice_title = sprintf( __( 'Invoice #%s', 'invoices-camptix' ), $invoice_number );
-
-	$date_format = ! empty( $opt['invoice-date-format'] ) ? $opt['invoice-date-format'] : 'd F Y';
-	$pdf->initFacture( $invoice_title, date_i18n( $date_format, strtotime( $obj->post_date ) ), '' );
-
-	// product.
-	$items = $order['items'];
-	if ( ! is_array( $items ) ) {
-		$items = array();
-	}//end if
-	foreach ( $items as $item ) {
-		$item_title   = $item['name'];
-		$item_price   = number_format_i18n( $item['price'], 2 );
-		$item_quatity = $item['quantity'];
-		$item_total   = number_format_i18n( $item_price * $item_quatity, 2 );
-		$pdf->productAdd( array( $item_title, $item_quatity, $item_price, $item_total ) );
-	}//end foreach
-
-	// total line.
-	$total     = number_format_i18n( $order['total'], 2 ) . ' ' . $currency;
-	$vat_total = number_format_i18n( 0, 2 ) . ' ' . $currency;
-	$pdf->vatTotalAdd( array( __( 'VAT amount:', 'invoices-camptix' ), $vat_total ) );
-	$pdf->totalAdd( array( __( 'Total amount:', 'invoices-camptix' ), $total ) );
-	$pdf->afterContentAdd( explode( PHP_EOL, $thank_you . PHP_EOL . $cgv ) );
-
-	// #3 Imports the template
-	//
-	$template = locate_template( 'template-invoice.php' ) ? locate_template( 'template-invoice.php' ) : 'includes/lib/fpdf/template.php';
-	require $template;
-
-	// #4 Finalization
-	// build the PDF
-	$pdf->buildPDF();
-
-	// download the file.
-	$invoice_title = sanitize_title( __( 'invoice-', 'invoices-camptix' ) . $invoice_number ) . '.pdf';
-	if ( in_array( $target, array( 'D', 'I' ), true ) ) {
-		$pdf->Output( $invoice_title, $target );
-		die();
-	} else {
-		$upload     = wp_upload_dir();
-		$upload_dir = $upload['basedir'];
-		$upload_dir = $upload_dir . '/camptix-invoices';
-		if ( ! is_dir( $upload_dir ) ) {
-			mkdir( $upload_dir, 0700 );
-			foreach ( array(
-				'.htaccess'  => 'Deny from all',
-				'index.html' => '',
-			) as $file => $content ) {
-				$file_handle = @fopen( trailingslashit( $upload_dir ) . $file, 'w' );
-				if ( $file_handle ) {
-					fwrite( $file_handle, $content );
-					fclose( $file_handle );
-				}//end if
-			}//end foreach
-		}//end if
-		$path = $upload_dir . '/' . $invoice_title;
-		$pdf->Output( $path, 'F' );
-		return $path;
-	}//end if
+	return $path;
 }
 
 /**
- * Can a request print an invoice ?
+ * Recovers the URL for a PDF invoice.
+ *
+ * @param int $invoice The invoice id.
  */
-function ctx_can_get_invoice() {
-	if ( empty( $_REQUEST['invoice_id'] ) || empty( $_REQUEST['invoice_auth'] ) ) {
-		return false;
-	}//end if
-	if ( 'tix_invoice' !== get_post_type( $_REQUEST['invoice_id'] ) ) {
-		return false;
-	}//end if
-	$auth = get_post_meta( (int) $_REQUEST['invoice_id'], 'auth', true );
-	if ( $auth !== $_REQUEST['invoice_auth'] ) {
-		return false;
-	}//end if
-	return (int) $_REQUEST['invoice_id'];
+function ctx_get_invoice_url( $invoice_id ) {
+	$invoice_document = get_post_meta( $invoice_id, 'invoice_document', true );
+	$upload_dir       = wp_upload_dir();
+
+	if ( empty( $upload_dir['basedir'] ) ) {
+		wp_die( esc_html__( 'Base upload directory is empty.', 'invoices-camptix' ) );
+	}
+
+	$invoices_dirurl = $upload_dir['baseurl'] . '/camptix-invoices';
+	$url             = $invoices_dirurl . '/' . $invoice_document;
+
+	return $url;
 }

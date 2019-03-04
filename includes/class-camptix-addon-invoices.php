@@ -237,7 +237,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 				'posts_per_page' => -1,
 				'post_type'      => 'tix_attendee',
 				'post_status'    => 'any',
-				'meta_query'     => array(
+				'meta_query'     => array( // @codingStandardsIgnoreLine
 					array(
 						'key'     => 'tix_payment_token',
 						'compare' => ' = ',
@@ -322,24 +322,25 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 			);
 		}//end if
 
-		$arr = array(
+		$invoice = array(
 			'post_type'   => 'tix_invoice',
 			'post_status' => 'publish',
 			'post_title'  => $invoice_title,
 			'post_name'   => sprintf( 'invoice-%s', $number ),
 		);
 
-		$invoice = wp_insert_post( $arr );
-		if ( ! $invoice || is_wp_error( $invoice ) ) {
+		$invoice_id = wp_insert_post( $invoice );
+		if ( ! $invoice_id || is_wp_error( $invoice_id ) ) {
 			return;
 		}//end if
-		update_post_meta( $invoice, 'invoice_number', $number );
-		update_post_meta( $invoice, 'invoice_metas', $metas );
-		update_post_meta( $invoice, 'original_order', $order );
-		update_post_meta( $invoice, 'transaction_id', $txn_id );
-		update_post_meta( $invoice, 'auth', uniqid() );
+		update_post_meta( $invoice_id, 'invoice_number', $number );
+		update_post_meta( $invoice_id, 'invoice_metas', $metas );
+		update_post_meta( $invoice_id, 'original_order', $order );
+		update_post_meta( $invoice_id, 'transaction_id', $txn_id );
 
-		return $invoice;
+		self::createInvoiceDocument( $invoice_id );
+
+		return $invoice_id;
 	}
 
 	/**
@@ -350,16 +351,16 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @todo Add a template for $message in the settings.
 	 */
 	public static function send_invoice( $invoice_id ) {
-		$i_m = get_post_meta( $invoice_id, 'invoice_metas', true );
-		if ( empty( $i_m['email'] ) && is_email( $i_m['email'] ) ) {
+		$invoice_metas = get_post_meta( $invoice_id, 'invoice_metas', true );
+		if ( empty( $invoice_metas['email'] ) && is_email( $invoice_metas['email'] ) ) {
 			return false;
 		}//end if
-		$invoice_pdf = ctx_get_invoice( $invoice_id, 'F' );
+		$invoice_pdf = ctx_get_invoice( $invoice_id );
 		$attachments = array( $invoice_pdf );
 		$opt         = get_option( 'camptix_options' );
 
 		/* translators: The name of the event */
-		$subject = apply_filters( 'camptix_invoices_mailsubjet', sprintf( __( 'Your invoice - %s', 'invoices-camptix' ), $opt['event_name'] ), $opt['event_name'] );
+		$subject = apply_filters( 'camptix_invoices_mailsubjet', sprintf( __( 'Your Invoice to %s', 'invoices-camptix' ), $opt['event_name'] ), $opt['event_name'] );
 		$from    = apply_filters( 'camptix_invoices_mailfrom', get_option( 'admin_email' ) );
 		$headers = apply_filters(
 			'camptix_invoices_mailheaders',
@@ -381,7 +382,38 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		);
 		$message = implode( PHP_EOL, $message );
 		$message = '<p>' . nl2br( $message ) . '</p>';
-		wp_mail( $i_m['email'], $subject, $message, $headers, $attachments );
+		wp_mail( $invoice_metas['email'], $subject, $message, $headers, $attachments );
+	}
+
+	public static function createInvoiceDocument( $invoice_id ) {
+
+		$invoice_number = get_post_meta( $invoice_id, 'invoice_number', true );
+		$invoice_metas  = get_post_meta( $invoice_id, 'invoice_metas', true );
+		$invoice_order  = get_post_meta( $invoice_id, 'original_order', true );
+
+		ob_start();
+		include CTX_INV_DIR . '/includes/views/invoice-template.php';
+		$invoice_content = ob_get_clean();
+
+		if ( ! class_exists( 'WordCamp_Docs_PDF_Generator' ) ) {
+			include_once CTX_INV_DIR . '/includes/lib/class-wordcamp-docs-pdf-generator.php';
+		}
+
+		$pdf_generator = new WordCamp_Docs_PDF_Generator();
+		$filename      = $invoice_number . '-' . wp_generate_password( 12, false, false ) . '.pdf';
+		$upload_dir    = wp_upload_dir();
+		$tmp_path      = $pdf_generator->generate_pdf_from_string( $invoice_content, $filename );
+
+		if ( ! empty( $upload_dir['basedir'] ) ) {
+			$invoices_dirname = $upload_dir['basedir'] . '/camptix-invoices';
+			if ( ! file_exists( $invoices_dirname ) ) {
+				wp_mkdir_p( $invoices_dirname );
+			}
+		}
+
+		rename( $tmp_path, $invoices_dirname . '/' . $filename );
+
+		update_post_meta( $invoice_id, 'invoice_document', $filename );
 	}
 
 	/**
@@ -422,29 +454,34 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @param array $attendee_info The attendee info.
 	 */
 	public static function attendee_info( $attendee_info ) {
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
 		global $camptix;
-		if ( ! empty( $_POST['camptix-need-invoice'] ) ) {
+		if ( empty( $_POST['camptix-need-invoice'] ) ) {
+			return $attendee_info;
+		}//end if
 
-			if ( empty( $_POST['invoice-email'] )            // @codingStandardsIgnoreLine
-				|| empty( $_POST['invoice-name'] )           // @codingStandardsIgnoreLine
-				|| empty( $_POST['invoice-address'] )        // @codingStandardsIgnoreLine
-				|| ! is_email( $_POST['invoice-email'] ) ) { // @codingStandardsIgnoreLine
+		if ( empty( $_POST['invoice-email'] )
+			|| empty( $_POST['invoice-name'] )
+			|| empty( $_POST['invoice-address'] )
+			|| ! is_email( wp_unslash( $_POST['invoice-email'] ) ) ) {
 
-				$camptix->error_flag( 'nope' );
+			$camptix->error_flag( 'nope' );
 
-			} else {
+		} else {
 
-				$attendee_info['invoice-email']   = sanitize_email( wp_unslash( $_POST['invoice-email'] ) );
-				$attendee_info['invoice-name']    = sanitize_text_field( wp_unslash( $_POST['invoice-name'] ) );
-				$attendee_info['invoice-address'] = sanitize_textarea_field( wp_unslash( $_POST['invoice-address'] ) );
+			$attendee_info['invoice-email']   = sanitize_email( wp_unslash( $_POST['invoice-email'] ) );
+			$attendee_info['invoice-name']    = sanitize_text_field( wp_unslash( $_POST['invoice-name'] ) );
+			$attendee_info['invoice-address'] = sanitize_textarea_field( wp_unslash( $_POST['invoice-address'] ) );
 
-				$opt = get_option( 'camptix_options' );
+			$opt = get_option( 'camptix_options' );
 
-				if ( ! empty( $opt['invoice-vat-number'] ) ) {
-					$attendee_info['invoice-vat-number'] = sanitize_text_field( wp_unslash( $_POST['invoice-vat-number'] ) );
-				}//end if
+			if ( ! empty( $opt['invoice-vat-number'] ) ) {
+				$attendee_info['invoice-vat-number'] = sanitize_text_field( wp_unslash( $_POST['invoice-vat-number'] ) );
 			}//end if
 		}//end if
+
+		// phpcs:enable
 		return $attendee_info;
 	}
 
@@ -477,6 +514,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 * @param object $attendee The attendee.
 	 */
 	public static function add_meta_invoice_on_attendee( $post_id, $attendee ) {
+
 		if ( ! empty( $attendee->invoice ) ) {
 			update_post_meta( $post_id, 'invoice_metas', $attendee->invoice );
 			global $camptix;
