@@ -114,7 +114,7 @@ function ctx_register_invoice_metabox( $post ) {
 add_action( 'add_meta_boxes_tix_invoice', 'ctx_register_invoice_metabox' );
 
 /**
- * Metabox for edible invoice (not published).
+ * Metabox for editable invoice (not published).
  *
  * @param object $args The args.
  */
@@ -184,44 +184,22 @@ function ctx_save_invoice_details( $post_id ) {
 add_action( 'save_post_tix_invoice', 'ctx_save_invoice_details', 10, 2 );
 
 /**
- * Assign invoice number on status transitions to PUBLISH
+ * Generate invoice document on status transitions to PUBLISH
  *
  * @param int $id The id.
  */
 function ctx_assign_invoice_number( $id ) {
+
 	if ( ! get_post_meta( $id, 'invoice_number', true ) ) {
+
 		$number = CampTix_Addon_Invoices::create_invoice_number();
 		update_post_meta( $id, 'invoice_number', $number );
+
+		CampTix_Addon_Invoices::create_invoice_document( $id );
+
 	}//end if
 }
 add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
-
-/**
- * Generate invoice PDF document on status transitions to PUBLISH
- *
- * @param int $id The invoice id.
- */
-function ctx_generate_invoice_document_on_publish( $id ) {
-	// TODO.
-}
-add_action( 'publish_tix_invoice', 'ctx_generate_invoice_document_on_publish', 10, 2 );
-
-/**
- * Disallow an invoice to be edit after publish.
- *
- * @param int $post_id The post id.
- */
-function ctx_dissallow_invoice_edit( $post_id ) {
-	if ( 'tix_invoice' !== get_post_type( $post_id ) ) {
-		return;
-	}//end if
-
-	$status = get_post_status( $post_id );
-	if ( 'publish' === $status ) {
-		wp_die( esc_html__( 'Published invoices cannot be edited.', 'invoices-camptix' ) );
-	}//end if
-}
-add_action( 'pre_post_update', 'ctx_dissallow_invoice_edit', 10, 2 );
 
 /**
  * Register REST API endpoint to serve invoice details form

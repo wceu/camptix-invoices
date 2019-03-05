@@ -338,7 +338,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		update_post_meta( $invoice_id, 'original_order', $order );
 		update_post_meta( $invoice_id, 'transaction_id', $txn_id );
 
-		self::createInvoiceDocument( $invoice_id );
+		self::create_invoice_document( $invoice_id );
 
 		return $invoice_id;
 	}
@@ -390,7 +390,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 *
 	 * @param int $invoice_id The invoice ID.
 	 */
-	public static function createInvoiceDocument( $invoice_id ) {
+	public static function create_invoice_document( $invoice_id ) {
 
 		$invoice_number = get_post_meta( $invoice_id, 'invoice_number', true );
 		$invoice_metas  = get_post_meta( $invoice_id, 'invoice_metas', true );
