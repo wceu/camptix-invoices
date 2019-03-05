@@ -36,7 +36,7 @@ function load_camptix_invoices() {
 add_action( 'camptix_load_addons', 'load_camptix_invoices' );
 
 /**
- * Register invoice CPT.
+ * Register invoice CPT and custom statuses.
  */
 function register_tix_invoice() {
 	register_post_type(
@@ -65,7 +65,108 @@ function register_tix_invoice() {
 			'show_in_menu' => 'edit.php?post_type=tix_ticket',
 		)
 	);
+
+	register_post_status( 'refunded',
+		array(
+			'label'                     => _x( 'Refunded', 'post', 'invoices-camptix' ),
+			'public'                    => true,
+			'show_in_admin_all_list'    => false,
+			'show_in_admin_status_list' => true,
+			'label_count'               => _n_noop( 'Refunded <span class="count">(%s)</span>', 'Refunded <span class="count">(%s)</span>', 'invoices-camptix' ),
+		)
+	);
+
+	register_post_status( 'cancelled',
+		array(
+			'label'                     => _x( 'Cancelled', 'post', 'invoices-camptix' ),
+			'public'                    => true,
+			'show_in_admin_all_list'    => false,
+			'show_in_admin_status_list' => true,
+			'label_count'               => _n_noop( 'Cancelled <span class="count">(%s)</span>', 'Cancelled <span class="count">(%s)</span>', 'invoices-camptix' ),
+		)
+	);
 }
+
+/**
+ * Display custom post statuses.
+ */
+function ctx_append_post_status_list() {
+
+	global $post;
+	$refunded_selected  = '';
+	$cancelled_selected = '';
+	$status             = '';
+	$refunded           = __( 'refunded', 'invoices-camptix' );
+	$cancelled          = __( 'cancelled', 'invoices-camptix' );
+	$refunded_status    = _x( 'Refunded', 'post', 'invoices-camptix' );
+	$cancelled_status   = _x( 'Cancelled', 'post', 'invoices-camptix' );
+
+	if ( 'tix_invoice' === $post->post_type ) {
+
+		if ( 'refunded' === $post->post_status ) {
+			$refunded_selected = ' selected=\"selected\"';
+			$status            = $refunded_status;
+		}
+
+		if ( 'cancelled' === $post->post_status ) {
+			$cancelled_selected = ' selected=\"selected\"';
+			$status             = $cancelled_status;
+		}
+
+		?>
+		<script>
+			jQuery( document ).ready( function($) {
+				$( "select#post_status" ).append( "<option value=\"<?php echo esc_attr( $refunded ); ?>\" <?php echo esc_attr( $refunded_selected ); ?>><?php echo esc_html( $refunded_status ); ?></option>" );
+				$( "select#post_status" ).append( "<option value=\"<?php echo esc_attr( $cancelled ); ?>\" <?php echo esc_attr( $cancelled_selected ); ?>><?php echo esc_html( $cancelled_status ); ?></option>" );
+				$( ".misc-pub-post-status #post-status-display" ).html( '<?php echo esc_html( $status ); ?>' );
+			});
+		</script>
+		<?php
+	}
+}
+add_action( 'admin_footer-post.php', 'ctx_append_post_status_list' );
+
+/**
+ * Show custom statuses on invoices index.
+ */
+function ctx_display_custom_statuses( $states ) {
+
+	global $post;
+	$arg = get_query_var( 'post_status' );
+
+	if ( 'refunded' !== $arg ) {
+		if ( 'refunded' === $post->post_status ) {
+			return array( _x( 'Refunded', 'post', 'invoices-camptix' ) );
+		}
+	}
+
+	if ( 'cancelled' !== $arg ) {
+		if ( 'cancelled' === $post->post_status ) {
+			return array( _x( 'Cancelled', 'post', 'invoices-camptix' ) );
+		}
+	}
+
+	return $states;
+}
+add_filter( 'display_post_states', 'ctx_display_custom_statuses' );
+
+/**
+ * Adding custom post status to Bulk and Quick Edit boxes: Status dropdown
+ */
+function ctx_append_post_status_bulk_edit() {
+
+	?>
+	<script>
+		jQuery( document ).ready( function($) {
+			$( ".inline-edit-status select " ).append("<option value=\"<?php echo esc_attr( __( 'refunded', 'invoices-camptix' ) ); ?>\"><?php echo esc_html_x( 'Refunded', 'post', 'invoices-camptix' ); ?></option>" );
+			$( ".inline-edit-status select " ).append("<option value=\"<?php echo esc_attr( __( 'cancelled', 'invoices-camptix' ) ); ?>\"><?php echo esc_html_x( 'Cancelled', 'post', 'invoices-camptix' ); ?></option>" );
+		});
+	</script>
+	<?php
+
+}
+
+add_action( 'admin_footer-edit.php', 'ctx_append_post_status_bulk_edit' );
 
 /**
  * Display an invoice button.
@@ -74,12 +175,16 @@ function register_tix_invoice() {
  */
 function ctx_invoice_link( $post ) {
 
-	if ( 'tix_invoice' !== $post->post_type || 'publish' !== $post->post_status ) {
+	if ( 'tix_invoice' !== $post->post_type ) {
 		return false;
 	}//end if
 
-	$invoice_url    = ctx_get_invoice_url( $post->ID );
 	$invoice_number = get_post_meta( $post->ID, 'invoice_number', true );
+	if ( empty( $invoice_number ) ) {
+		return false;
+	}
+
+	$invoice_url = ctx_get_invoice_url( $post->ID );
 
 	include CTX_INV_DIR . '/includes/views/invoice-download-button.php';
 }
@@ -91,7 +196,9 @@ add_action( 'post_submitbox_misc_actions', 'ctx_invoice_link' );
  * @param object $post The post.
  */
 function ctx_register_invoice_metabox( $post ) {
-	if ( 'publish' === $post->post_status ) {
+
+	$non_editable_statuses = array( 'publish', 'cancelled', 'refunded' );
+	if ( in_array( $post->post_status, $non_editable_statuses, true ) ) {
 		add_meta_box(
 			'ctx_invoice_metabox',
 			esc_html( 'Info', 'invoices-camptix' ),
