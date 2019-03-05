@@ -118,7 +118,9 @@ function ctx_append_post_status_list() {
 			jQuery( document ).ready( function($) {
 				$( "select#post_status" ).append( "<option value=\"<?php echo esc_attr( $refunded ); ?>\" <?php echo esc_attr( $refunded_selected ); ?>><?php echo esc_html( $refunded_status ); ?></option>" );
 				$( "select#post_status" ).append( "<option value=\"<?php echo esc_attr( $cancelled ); ?>\" <?php echo esc_attr( $cancelled_selected ); ?>><?php echo esc_html( $cancelled_status ); ?></option>" );
-				$( ".misc-pub-post-status #post-status-display" ).html( '<?php echo esc_html( $status ); ?>' );
+				<?php if ( ! empty( $status ) ) { ?>
+					$( ".misc-pub-post-status #post-status-display" ).html( '<?php echo esc_html( $status ); ?>' );
+				<?php } ?>
 			});
 		</script>
 		<?php
@@ -270,25 +272,88 @@ function ctx_invoice_metabox_sent( $args ) {
  * @param int $post_id The post ID.
  */
 function ctx_save_invoice_details( $post_id ) {
-	if ( ! isset( $_POST['edit-invoice'] ) ) {
+	if ( ! isset( $_POST['edit-invoice'], $_POST['user_ID'], $_POST['post_ID'] ) ) {
 		return;
 	}//end if
 
-	check_admin_referer( 'edit-invoice-' . $_POST['user_ID'] . '-' . $_POST['post_ID'], 'edit-invoice' );
+	check_admin_referer( 'edit-invoice-' . absint( $_POST['user_ID'] ) . '-' . absint( $_POST['post_ID'] ), 'edit-invoice' );
 
-	// Filter items to save.
-	$order = $_POST['order'];
-	$items = array();
-	foreach ( $order['items'] as $item ) {
-		if ( ! empty( $item['name'] ) && ! empty( $item['quantity'] ) ) {
-			$items[] = $item;
-		}//end if
-	}//end foreach
-	$order['items'] = $items;
-	update_post_meta( $post_id, 'original_order', $order );
-	update_post_meta( $post_id, 'invoice_metas', $_POST['invoice_metas'] );
+	$order = wp_parse_args(
+		$_POST['order'],
+		array(
+			'total'  => 0,
+			'items'  => array(),
+			'coupon' => '',
+		)
+	);
+
+	$final_order = array(
+		'total'  => floatval( $order['total'] ),
+		'items'  => array_filter( array_map( 'ctx_sanitize_order_item', $order['items'] ) ),
+		'coupon' => sanitize_text_field( $order['coupon'] ),
+	);
+
+	$default_metas = array(
+		'email'   => '',
+		'name'    => '',
+		'address' => '',
+	);
+
+	$opt = get_option( 'camptix_options' );
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		$default_metas['vat-number'] = '';
+	}//end if
+
+	$metas = wp_parse_args( $_POST['invoice_metas'], $default_metas );
+
+	$final_metas = array(
+		'email'   => sanitize_email( $metas['email'] ),
+		'name'    => sanitize_text_field( $metas['name'] ),
+		'address' => sanitize_textarea_field( $metas['address'] ),
+	);
+	if ( ! empty( $opt['invoice-vat-number'] ) ) {
+		$final_metas['vat-number'] = sanitize_text_field( $metas['vat-number'] );
+	}//end if
+
+	update_post_meta( $post_id, 'original_order', $final_order );
+	update_post_meta( $post_id, 'invoice_metas', $final_metas );
 }
 add_action( 'save_post_tix_invoice', 'ctx_save_invoice_details', 10, 2 );
+
+/**
+ * Sanitize order item.
+ */
+function ctx_sanitize_order_item( $item ) {
+
+	$item = wp_parse_args(
+		$item,
+		array(
+			'id'          => 0,
+			'name'        => '',
+			'description' => '',
+			'quantity'    => 0,
+			'price'       => 0,
+		)
+	);
+
+	$item = array(
+		'id'          => absint( $item['id'] ),
+		'name'        => sanitize_text_field( $item['name'] ),
+		'description' => sanitize_text_field( $item['description'] ),
+		'quantity'    => absint( $item['quantity'] ),
+		'price'       => floatval( $item['price'] ),
+	);
+
+	if ( empty( $item['name'] ) ) {
+		return false;
+	}
+
+	if ( empty( $item['quantity'] ) ) {
+		return false;
+	}
+
+	return $item;
+}
 
 /**
  * Generate invoice document on status transitions to PUBLISH

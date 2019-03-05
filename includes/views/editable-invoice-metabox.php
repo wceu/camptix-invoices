@@ -28,7 +28,7 @@ defined( 'WPINC' ) || die();
 				<input type="text" value="<?php echo esc_html( $item['name'] ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][name]" class="widefat">
 			</td><!-- name -->
 			<td>
-				<input type="number" min="0" value="<?php echo esc_attr( number_format_i18n( $item['price'], 2 ) ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][price]" class="widefat">
+				<input type="number" min="0" step="0.01" value="<?php echo esc_attr( number_format_i18n( $item['price'], 2 ) ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][price]" class="widefat">
 			</td><!-- price -->
 			<td>
 				<input type="number" min="0" value="<?php echo esc_attr( number_format_i18n( $item['quantity'] ) ); ?>" name="order[items][<?php echo esc_attr( $k ); ?>][quantity]" class="widefat">
@@ -39,7 +39,7 @@ defined( 'WPINC' ) || die();
 
 		<tr>
 			<td><input type="text" value="" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][name]" class="widefat"></td><!-- name -->
-			<td><input type="number" min="0" value="<?php echo esc_attr( number_format_i18n( 0, 2 ) ); ?>" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][price]" class="widefat"></td><!-- price -->
+			<td><input type="number" min="0" step="0.01" value="<?php echo esc_attr( number_format_i18n( 0, 2 ) ); ?>" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][price]" class="widefat"></td><!-- price -->
 			<td><input type="number" min="0" value="" name="order[items][<?php echo esc_attr( count( $order['items'] ) + 1 ); ?>][quantity]" class="widefat"></td><!-- qty -->
 		</tr>
 
@@ -55,6 +55,7 @@ defined( 'WPINC' ) || die();
 			<input
 				type="number"
 				min="0"
+				step="0.01"
 				value="<?php echo esc_attr( number_format_i18n( empty( $order['total'] ) ? '0' : $order['total'], 2 ) ); ?>"
 				name="order[total]"
 				id="order[total]"
@@ -98,9 +99,9 @@ defined( 'WPINC' ) || die();
 				name="invoice_metas[address]"
 				id="invoice_metas[address]"
 				class="widefat"
-			>
-				<?php echo esc_textarea( empty( $metas['address'] ) ? '' : $metas['address'] ); ?>
-			</textarea>
+			><?php
+				echo esc_textarea( empty( $metas['address'] ) ? '' : $metas['address'] );
+			?></textarea>
 		<td>
 	</tr>
 
