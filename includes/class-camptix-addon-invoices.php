@@ -396,8 +396,10 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$invoice_metas  = get_post_meta( $invoice_id, 'invoice_metas', true );
 		$invoice_order  = get_post_meta( $invoice_id, 'original_order', true );
 
+		$template = locate_template( 'invoice-template.php' ) ? locate_template( 'invoice-template.php' ) : CTX_INV_DIR . '/includes/views/invoice-template.php';
+
 		ob_start();
-		include CTX_INV_DIR . '/includes/views/invoice-template.php';
+		include $template;
 		$invoice_content = ob_get_clean();
 
 		if ( ! class_exists( 'WordCamp_Docs_PDF_Generator' ) ) {

@@ -36,8 +36,8 @@ Be warned that you can't edit or delete a published invoice, so… save it as dr
 
 = How can I customize Invoices template? =
 
-TODO
-
+You can drop a copy of file `includes/views/invoice-template.php` into your theme folder and name it `invoice-template.php`.
+Then modify the HTML layout and styles as you want.
 
 == Changelog ==
 
