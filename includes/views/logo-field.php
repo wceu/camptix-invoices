@@ -11,7 +11,8 @@ defined( 'WPINC' ) || die();
 	<div class="camptix-invoice-logo-preview-wrapper" data-imagewrapper>
 		<?php
 		if ( ! empty( $value ) ) {
-			echo wp_get_attachment_image( $value, 'thumbnail' );
+			$attachment = wp_get_attachment_image_src( $value, 'full' );
+			printf( '<img src="%s" style="max-width:250px;max-height:200px;">', esc_url( $attachment[0] ) );
 		}
 		?>
 	</div>
@@ -29,4 +30,5 @@ defined( 'WPINC' ) || die();
 		?>
 	/>
 	<input type="hidden" name=camptix_options[<?php echo esc_attr( $id ); ?>] data-field="image_attachment" value="<?php echo esc_attr( $value ); ?>">
+	<p class="description"><?php echo esc_html__( 'Expected image size: 250px width, 200px height', 'invoices-camptix' ); ?></p>
 </div>

@@ -5,6 +5,7 @@ defined( 'WPINC' ) || die();
 /** @var string $invoice_number */
 /** @var array $invoice_metas */
 /** @var array $invoice_order */
+/** @var string $logo */
 
 ?>
 
@@ -24,6 +25,7 @@ defined( 'WPINC' ) || die();
 		</style>
 	</head>
 	<body>
+		<img src="<?php echo esc_url( $logo ); ?>" style="max-width:250px;max-height:200px;">
 		<h1>Hello World!</h1>
 		<p>To Do</p>
 	</body>

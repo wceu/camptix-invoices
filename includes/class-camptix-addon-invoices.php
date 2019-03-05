@@ -396,6 +396,14 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$invoice_metas  = get_post_meta( $invoice_id, 'invoice_metas', true );
 		$invoice_order  = get_post_meta( $invoice_id, 'original_order', true );
 
+		$opt = get_option( 'camptix_options' );
+
+		$logo = CTX_INV_DIR . '/admin/images/wp-community-support.png';
+		if ( ! empty( $opt['invoice-logo'] ) ) {
+			$attachment = wp_get_attachment_image_src( $opt['invoice-logo'], 'full' );
+			$logo       = $attachment[0];
+		}
+
 		$template = locate_template( 'invoice-template.php' ) ? locate_template( 'invoice-template.php' ) : CTX_INV_DIR . '/includes/views/invoice-template.php';
 
 		ob_start();
