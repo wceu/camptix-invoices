@@ -392,15 +392,15 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 	 */
 	public static function create_invoice_document( $invoice_id ) {
 
-		$invoice_number = get_post_meta( $invoice_id, 'invoice_number', true );
-		$invoice_metas  = get_post_meta( $invoice_id, 'invoice_metas', true );
-		$invoice_order  = get_post_meta( $invoice_id, 'original_order', true );
-
-		$opt = get_option( 'camptix_options' );
+        $camptix_opts              = get_option( 'camptix_options' );
+		$invoice_number            = get_post_meta( $invoice_id, 'invoice_number', true );
+		$invoice_date              = get_the_date($camptix_opts['invoice-date-format'], $invoice_id);
+		$invoice_metas             = get_post_meta( $invoice_id, 'invoice_metas', true );
+		$invoice_order             = get_post_meta( $invoice_id, 'original_order', true );
 
 		$logo = CTX_INV_DIR . '/admin/images/wp-community-support.png';
-		if ( ! empty( $opt['invoice-logo'] ) ) {
-			$attachment = wp_get_attachment_image_src( $opt['invoice-logo'], 'full' );
+		if ( ! empty( $camptix_opts['invoice-logo'] ) ) {
+			$attachment = wp_get_attachment_image_src( $camptix_opts['invoice-logo'], 'full' );
 			$logo       = $attachment[0];
 		}
 
@@ -430,6 +430,26 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 
 		update_post_meta( $invoice_id, 'invoice_document', $filename );
 	}
+
+	public static function format_currency($amount, $currency_key)
+    {
+        $camptix_currencies        = CampTix_Currency::get_currency_list();
+        if (isset($camptix_currencies[$currency_key]) === false) {
+            $currency_key = 'USD';
+        }
+        $currency = $camptix_currencies[$currency_key];
+
+        if ( isset( $currency['locale'] ) === true) {
+            setlocale( LC_MONETARY, $currency['locale'] );
+            $formatted_amount = money_format( "%.{$currency['decimal_point']}n", $amount );
+        } elseif ( isset( $currency['format'] ) && $currency['format'] ) {
+            $formatted_amount = sprintf( $currency['format'], number_format( $amount, $currency['decimal_point'] ) );
+        } else {
+            $formatted_amount = $currency_key . ' ' . number_format( $amount, $currency['decimal_point'] );
+        }
+
+        return $formatted_amount;
+    }
 
 	/**
 	 * Enqueue assets
