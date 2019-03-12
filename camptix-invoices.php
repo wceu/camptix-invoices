@@ -272,7 +272,7 @@ function ctx_invoice_metabox_sent( $args ) {
  * @param int $post_id The post ID.
  */
 function ctx_save_invoice_details( $post_id ) {
-	if ( ! isset( $_POST['edit-invoice'], $_POST['user_ID'], $_POST['post_ID'] ) ) {
+	if ( ! isset( $_POST['edit-invoice'], $_POST['user_ID'], $_POST['post_ID'], $_POST['order'], $_POST['invoice_metas'] ) ) {
 		return;
 	}//end if
 
