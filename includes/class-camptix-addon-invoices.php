@@ -100,19 +100,6 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		);
 
 		add_settings_field(
-			'invoice-current-number',
-			__( 'Next invoice', 'invoices-camptix' ),
-			array( __CLASS__, 'current_number_callback' ),
-			'camptix_options',
-			'invoice',
-			array(
-				'id'     => 'invoice-current-number',
-				'value'  => isset( $opt['invoice-current-number'] ) ? $opt['invoice-current-number'] : 1,
-				'yearly' => isset( $opt['invoice-new-year-reset'] ) ? $opt['invoice-new-year-reset'] : false,
-			)
-		);
-
-		add_settings_field(
 			'invoice-logo',
 			__( 'Logo', 'invoices-camptix' ),
 			array( __CLASS__, 'type_file_callback' ),
@@ -145,20 +132,6 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		);
 
 		include CTX_INV_DIR . '/includes/views/date-format-field.php';
-	}
-
-	/**
-	 * Next invoice number setting.
-	 *
-	 * @param array $args Arguments.
-	 */
-	public static function current_number_callback( $args ) {
-
-		$id     = $args['id'];
-		$value  = $args['value'];
-		$yearly = $args['yearly'];
-
-		include CTX_INV_DIR . '/includes/views/next-invoice-number-field.php';
 	}
 
 	/**
@@ -202,9 +175,6 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		}//end if
 		if ( isset( $input['invoice-vat-number'] ) ) {
 			$output['invoice-vat-number'] = (int) $input['invoice-vat-number'];
-		}//end if
-		if ( ! empty( $input['invoice-current-number'] ) ) {
-			$output['invoice-current-number'] = (int) $input['invoice-current-number'];
 		}//end if
 		if ( isset( $input['invoice-logo'] ) ) {
 			$output['invoice-logo'] = (int) $input['invoice-logo'];
@@ -263,26 +233,33 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 
 	/**
 	 * Get, increment and return invoice number.
-	 *
-	 * @todo can be refactorized
 	 */
 	public static function create_invoice_number() {
 		$opt     = get_option( 'camptix_options' );
-		$current = ! empty( $opt['invoice-current-number'] ) ? intval( $opt['invoice-current-number'] ) : 1;
-		$year    = date( 'Y' );
+		$current = get_option( 'invoice_current_number', 1 );
 
+		$year = date( 'Y' );
 		if ( ! empty( $opt['invoice-new-year-reset'] ) ) {
 			if ( ! empty( $opt['invoice-current-year'] ) && $opt['invoice-current-year'] !== $year ) {
-				$opt['invoice-current-number'] = 1;
-				$current                       = 1;
+				$current                     = 1;
+				$opt['invoice-current-year'] = $year;
+				update_option( 'camptix_options', $opt );
 			}//end if
-			$current = sprintf( '%s-%s', $year, $current );
 		}//end if
 
-		$opt['invoice-current-year'] = $year;
-		$opt['invoice-current-number']++;
-		update_option( 'camptix_options', $opt );
-		return $current;
+		/**
+		 * Sets the current invoice number.
+		 *
+		 * @param int $current current invoice number.
+		 */
+		$current = apply_filters( 'tix_invoice_current_number', $current );
+		update_option( 'invoice_current_number', $current + 1 );
+
+		if ( empty( $opt['invoice-new-year-reset'] ) ) {
+			return $current;
+		} else {
+			return sprintf( '%s-%s', $year, $current );
+		}
 	}
 
 	/**
