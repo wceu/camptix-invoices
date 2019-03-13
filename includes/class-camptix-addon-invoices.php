@@ -337,10 +337,10 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$opt         = get_option( 'camptix_options' );
 
 		/* translators: The name of the event */
-		$subject = apply_filters( 'camptix_invoices_mailsubjet', sprintf( __( 'Your Invoice to %s', 'invoices-camptix' ), $opt['event_name'] ), $opt['event_name'] );
-		$from    = apply_filters( 'camptix_invoices_mailfrom', get_option( 'admin_email' ) );
+		$subject = apply_filters( 'camptix_invoices_mail_subject', sprintf( __( 'Your Invoice to %s', 'invoices-camptix' ), $opt['event_name'] ), $opt['event_name'] );
+		$from    = apply_filters( 'camptix_invoices_mail_from', get_option( 'admin_email' ) );
 		$headers = apply_filters(
-			'camptix_invoices_mailheaders',
+			'camptix_invoices_mail_headers',
 			array(
 				"From: {$opt['event_name']} <{$from}>",
 				'Content-type: text/html; charset=UTF-8',
