@@ -411,7 +411,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		$invoice_content = ob_get_clean();
 
 		if ( ! class_exists( 'WordCamp_Docs_PDF_Generator' ) ) {
-			include_once CTX_INV_DIR . '/includes/lib/class-wordcamp-docs-pdf-generator.php';
+			wp_die( esc_html__( 'WordCamp_Docs_PDF_Generator is missing', 'invoices-camptix' ) );
 		}
 
 		$pdf_generator = new WordCamp_Docs_PDF_Generator();
