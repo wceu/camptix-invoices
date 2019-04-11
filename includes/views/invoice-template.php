@@ -140,8 +140,10 @@ defined('WPINC') || die();
 				<?php echo esc_html( $invoice_metas['name'] ); ?><br/>
 				<?php echo esc_html( $invoice_metas['address'] ); ?><br/>
 			</p>
-			<strong><?php esc_html_e('VAT no', 'invoices-camptix'); ?>:</strong>
+			<?php if ( ! empty( $invoice_metas['vat-number'] ) ) { ?>
+				<strong><?php esc_html_e('VAT no', 'invoices-camptix'); ?>:</strong>
 				<?php echo esc_html( $invoice_metas['vat-number'] ); ?>
+			<?php } ?>
 		</div>
 	</div>
 	<div class="camptix-invoice-data text-right">

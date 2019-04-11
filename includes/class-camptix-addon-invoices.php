@@ -301,7 +301,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 
 		$invoice = array(
 			'post_type'   => 'tix_invoice',
-			'post_status' => 'publish',
+			'post_status' => 'draft',
 			'post_title'  => $invoice_title,
 			'post_name'   => sprintf( 'invoice-%s', $number ),
 		);
@@ -315,7 +315,12 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		update_post_meta( $invoice_id, 'original_order', $order );
 		update_post_meta( $invoice_id, 'transaction_id', $txn_id );
 
-		self::create_invoice_document( $invoice_id );
+		wp_update_post(
+			array(
+				'ID'          => $invoice_id,
+				'post_status' => 'publish',
+			)
+		);
 
 		return $invoice_id;
 	}
@@ -371,7 +376,7 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 
 		$camptix_opts   = get_option( 'camptix_options' );
 		$invoice_number = get_post_meta( $invoice_id, 'invoice_number', true );
-		$invoice_date   = get_the_date($camptix_opts['invoice-date-format'], $invoice_id);
+		$invoice_date   = get_the_date( $camptix_opts['invoice-date-format'], $invoice_id );
 		$invoice_metas  = get_post_meta( $invoice_id, 'invoice_metas', true );
 		$invoice_order  = get_post_meta( $invoice_id, 'original_order', true );
 
@@ -410,6 +415,62 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 		rename( $tmp_path, $invoices_dirname . '/' . $filename );
 
 		update_post_meta( $invoice_id, 'invoice_document', $filename );
+	}
+
+	/**
+	 * Check whether the invoice has the required fields or not.
+	 *
+	 * @param int $invoice_id The invoice ID.
+	 */
+	public static function is_invoice_incomplete( $invoice_id ) {
+		$invoice_metas = get_post_meta( $invoice_id, 'invoice_metas', true );
+		$invoice_order = get_post_meta( $invoice_id, 'original_order', true );
+
+		if ( empty( $invoice_metas['name'] ) ) {
+			return true;
+		}
+
+		if ( empty( $invoice_metas['address'] ) ) {
+			return true;
+		}
+
+		if ( empty( $invoice_order['items'] ) ) {
+			return true;
+		}
+
+		foreach ( $invoice_order['items'] as $item ) {
+			if ( empty( $item['quantity'] ) ) {
+				return true;
+			}
+			if ( empty( $item['name'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Delete the invoice document of a given invoice.
+	 *
+	 * @param int $invoice_id The invoice ID.
+	 */
+	public static function delete_invoice_document( $invoice_id ) {
+		$filename = get_post_meta( $invoice_id, 'invoice_document', true );
+		if ( empty( $filename ) ) {
+			return;
+		}
+
+		delete_post_meta( $invoice_id, 'invoice_document' );
+
+		$upload_dir = wp_upload_dir();
+		if ( ! empty( $upload_dir['basedir'] ) ) {
+			$invoices_dirname = $upload_dir['basedir'] . '/camptix-invoices';
+			$filename         = $invoices_dirname . '/' . $filename;
+			if ( file_exists( $filename ) ) {
+				wp_delete_file( $filename );
+			}
+		}
 	}
 
 	/**

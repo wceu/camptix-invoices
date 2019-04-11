@@ -11,11 +11,13 @@ defined( 'WPINC' ) || die();
 	<p>
 		<?php echo esc_html__( 'Invoice number', 'invoices-camptix' ); ?> <strong><?php echo esc_html( $invoice_number ); ?></strong>
 	</p>
-	<a
-		href="<?php echo esc_attr( $invoice_url ); ?>"
-		class="button button-secondary"
-		target="_blank"
-	>
-		<?php echo esc_html__( 'Download invoice', 'invoices-camptix' ); ?>
-	</a>
+	<?php if ( ! empty( $invoice_url ) ) { ?>
+		<a
+			href="<?php echo esc_attr( $invoice_url ); ?>"
+			class="button button-secondary"
+			target="_blank"
+		>
+			<?php echo esc_html__( 'Download invoice', 'invoices-camptix' ); ?>
+		</a>
+	<?php } ?>
 </div>

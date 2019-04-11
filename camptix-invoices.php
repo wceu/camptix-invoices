@@ -99,6 +99,28 @@ function register_tix_invoice() {
 }
 
 /**
+ * Register invoice CPT custom update messages.
+ */
+function ctx_set_invoice_updated_messages( $messages ) {
+
+	$messages['tix_invoice'] = array(
+		0  => '', // Unused. Messages start at index 1.
+		1  => __( 'Invoice updated.', 'invoices-camptix' ),
+		2  => __( 'Custom field updated.', 'invoices-camptix' ),
+		3  => __( 'Custom field deleted.', 'invoices-camptix' ),
+		4  => __( 'Invoice updated.', 'invoices-camptix' ),
+		5  => __( 'Invoice restored.', 'invoices-camptix' ),
+		6  => __( 'Invoice saved.', 'invoices-camptix' ),
+		7  => __( 'Invoice saved.', 'invoices-camptix' ),
+		8  => __( 'Invoice submitted.', 'invoices-camptix' ),
+		9  => __( 'Invoice saved.', 'invoices-camptix' ),
+		10 => __( 'Invoice draft updated.', 'invoices-camptix' ),
+	);
+	return $messages;
+}
+add_filter( 'post_updated_messages', 'ctx_set_invoice_updated_messages' );
+
+/**
  * Display custom post statuses.
  */
 function ctx_append_post_status_list() {
@@ -367,22 +389,100 @@ function ctx_sanitize_order_item( $item ) {
 }
 
 /**
- * Generate invoice document on status transitions to PUBLISH
+ * Mark an invoice as draft when incomplete.
  *
- * @param int $id The id.
+ * @param int $invoice_id The invoice id.
  */
-function ctx_assign_invoice_number( $id ) {
+function ctx_mark_incomplete_invoice_as_draft( $invoice_id ) {
+	if ( wp_is_post_revision( $invoice_id ) || wp_is_post_autosave( $invoice_id ) ) {
+		return;
+	}
 
-	if ( ! get_post_meta( $id, 'invoice_number', true ) ) {
+	if ( 'tix_invoice' !== get_post_type( $invoice_id ) ) {
+		return;
+	}
 
-		$number = CampTix_Addon_Invoices::create_invoice_number();
-		update_post_meta( $id, 'invoice_number', $number );
+	if ( in_array( get_post_status( $invoice_id ), array( 'trash', 'pending' ), true ) ) {
+		return;
+	}
 
-	}//end if
-
-	CampTix_Addon_Invoices::create_invoice_document( $id );
+	if ( CampTix_Addon_Invoices::is_invoice_incomplete( $invoice_id ) ) {
+		remove_action( 'save_post', 'ctx_mark_incomplete_invoice_as_draft' );
+		wp_update_post(
+			array(
+				'ID'          => $invoice_id,
+				'post_status' => 'draft',
+			)
+		);
+		add_action( 'save_post', 'ctx_mark_incomplete_invoice_as_draft' );
+	}
 }
-add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
+add_action( 'save_post', 'ctx_mark_incomplete_invoice_as_draft' );
+
+/**
+ * Assign an invoice number.
+ *
+ * @param int $invoice_id The invoice id.
+ */
+function ctx_assign_invoice_number( $invoice_id ) {
+	if ( wp_is_post_revision( $invoice_id ) || wp_is_post_autosave( $invoice_id ) ) {
+		return;
+	}
+
+	if ( 'tix_invoice' !== get_post_type( $invoice_id ) ) {
+		return;
+	}
+
+	if ( ! get_post_meta( $invoice_id, 'invoice_number', true ) ) {
+		$number = CampTix_Addon_Invoices::create_invoice_number();
+		update_post_meta( $invoice_id, 'invoice_number', $number );
+	}
+}
+add_action( 'save_post', 'ctx_assign_invoice_number' );
+
+/**
+ * Generate the invoice document.
+ *
+ * @param int $invoice_id The invoice id.
+ */
+function ctx_generate_invoice_document( $invoice_id ) {
+	if ( wp_is_post_revision( $invoice_id ) || wp_is_post_autosave( $invoice_id ) ) {
+		return;
+	}
+
+	if ( 'tix_invoice' !== get_post_type( $invoice_id ) ) {
+		return;
+	}
+
+	if ( ! in_array( get_post_status( $invoice_id ), array( 'publish', 'cancelled', 'refunded' ), true ) ) {
+		return;
+	}
+
+	CampTix_Addon_Invoices::create_invoice_document( $invoice_id );
+}
+add_action( 'save_post', 'ctx_generate_invoice_document' );
+
+/**
+ * Remove the invoice document in drafts.
+ *
+ * @param int $invoice_id The invoice id.
+ */
+function ctx_remove_invoice_document_in_draft( $invoice_id ) {
+	if ( wp_is_post_revision( $invoice_id ) || wp_is_post_autosave( $invoice_id ) ) {
+		return;
+	}
+
+	if ( 'tix_invoice' !== get_post_type( $invoice_id ) ) {
+		return;
+	}
+
+	if ( ! in_array( get_post_status( $invoice_id ), array( 'draft', 'trash' ), true ) ) {
+		return;
+	}
+
+	CampTix_Addon_Invoices::delete_invoice_document( $invoice_id );
+}
+add_action( 'save_post', 'ctx_remove_invoice_document_in_draft' );
 
 /**
  * Register REST API endpoint to serve invoice details form
@@ -446,15 +546,17 @@ function ctx_get_invoice( $invoice_id ) {
  * @param int $invoice_id The invoice id.
  */
 function ctx_get_invoice_url( $invoice_id ) {
-	$invoice_document = get_post_meta( $invoice_id, 'invoice_document', true );
-	$upload_dir       = wp_upload_dir();
 
+	$invoice_document = get_post_meta( $invoice_id, 'invoice_document', true );
+	if ( empty( $invoice_document ) ) {
+		return false;
+	}
+
+	$upload_dir = wp_upload_dir();
 	if ( empty( $upload_dir['basedir'] ) ) {
-		wp_die( esc_html__( 'Base upload directory is empty.', 'invoices-camptix' ) );
+		return false;
 	}
 
 	$invoices_dirurl = $upload_dir['baseurl'] . '/camptix-invoices';
-	$url             = $invoices_dirurl . '/' . $invoice_document;
-
-	return $url;
+	return $invoices_dirurl . '/' . $invoice_document;
 }

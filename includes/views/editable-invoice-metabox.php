@@ -64,10 +64,11 @@ defined( 'WPINC' ) || die();
 	</tr>
 	<tr>
 		<th scope="row">
-			<label for="invoice_metas[name]"><?php echo esc_html__( 'Customer', 'invoices-camptix' ); ?></label>
+			<label for="invoice_metas[name]"><?php echo esc_html__( 'Customer', 'invoices-camptix' ); ?> •</label>
 		</th>
 		<td>
 			<input
+				required
 				name="invoice_metas[name]"
 				id="invoice_metas[name]"
 				value="<?php echo esc_attr( empty( $metas['name'] ) ? '' : $metas['name'] ); ?>"
@@ -92,10 +93,11 @@ defined( 'WPINC' ) || die();
 	</tr>
 	<tr>
 		<th scope="row">
-			<label for="invoice_metas[address]"><?php echo esc_html__( 'Customer Address', 'invoices-camptix' ); ?></label>
+			<label for="invoice_metas[address]"><?php echo esc_html__( 'Customer Address', 'invoices-camptix' ); ?> •</label>
 		</th>
 		<td>
 			<textarea
+				required
 				name="invoice_metas[address]"
 				id="invoice_metas[address]"
 				class="widefat"
