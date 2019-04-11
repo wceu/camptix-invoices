@@ -173,11 +173,11 @@ defined('WPINC') || die();
 						<td class="text-left"><?php echo esc_html( $item['name'] ); ?></td>
 						<td class="text-center"><?php echo esc_html( $item['quantity'] ); ?></td>
 						<td class="text-right">
-							<?php echo esc_html( CampTix_Addon_Invoices::format_currency( get_post_meta( $item->id, 'tix_price', true ), $camptix_opts['currency'] ) ); ?>
+							<?php echo esc_html( CampTix_Addon_Invoices::format_currency( $item['price'], $camptix_opts['currency'] ) ); ?>
 						</td>
 
 						<td class="text-right">
-							<?php echo esc_html( CampTix_Addon_Invoices::format_currency( $item['price'], $camptix_opts['currency'] ) ); ?>
+							<?php echo esc_html( CampTix_Addon_Invoices::format_currency( $item['price'] * $item['quantity'], $camptix_opts['currency'] ) ); ?>
 						</td>
 					</tr>
 				<?php endforeach ?>

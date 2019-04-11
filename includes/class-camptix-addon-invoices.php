@@ -391,8 +391,12 @@ class CampTix_Addon_Invoices extends \CampTix_Addon {
 			wp_die( esc_html__( 'WordCamp_Docs_PDF_Generator is missing', 'invoices-camptix' ) );
 		}
 
+		$filename = get_post_meta( $invoice_id, 'invoice_document', true );
+		if ( empty( $filename ) ) {
+			$filename = $invoice_number . '-' . wp_generate_password( 12, false, false ) . '.pdf';
+		}
+
 		$pdf_generator = new WordCamp_Docs_PDF_Generator();
-		$filename      = $invoice_number . '-' . wp_generate_password( 12, false, false ) . '.pdf';
 		$upload_dir    = wp_upload_dir();
 		$tmp_path      = $pdf_generator->generate_pdf_from_string( $invoice_content, $filename );
 

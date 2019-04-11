@@ -378,9 +378,9 @@ function ctx_assign_invoice_number( $id ) {
 		$number = CampTix_Addon_Invoices::create_invoice_number();
 		update_post_meta( $id, 'invoice_number', $number );
 
-		CampTix_Addon_Invoices::create_invoice_document( $id );
-
 	}//end if
+
+	CampTix_Addon_Invoices::create_invoice_document( $id );
 }
 add_action( 'publish_tix_invoice', 'ctx_assign_invoice_number', 10, 2 );
 
