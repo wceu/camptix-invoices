@@ -560,3 +560,165 @@ function ctx_get_invoice_url( $invoice_id ) {
 	$invoices_dirurl = $upload_dir['baseurl'] . '/camptix-invoices';
 	return $invoices_dirurl . '/' . $invoice_document;
 }
+
+/**
+ * Registers the personal data exporter for invoices.
+ *
+ * @param array $exporters
+ *
+ * @return array
+ */
+function ctx_register_invoice_data_exporter( $exporters ) {
+	$exporters['camptix-invoice'] = array(
+		'exporter_friendly_name' => __( 'CampTix Invoice Data', 'camptix' ),
+		'callback'               => 'ctx_invoice_data_exporter',
+	);
+
+	return $exporters;
+}
+add_filter( 'wp_privacy_personal_data_exporters', 'ctx_register_invoice_data_exporter' );
+
+/**
+ * Finds and exports invoice data associated with an email address.
+ *
+ * @param string $email_address
+ * @param int    $page
+ *
+ * @return array
+ */
+function ctx_invoice_data_exporter( $email_address, $page ) {
+	$page = (int) $page;
+
+	$data_to_export = array();
+
+	$post_query = get_invoice_posts( $email_address, $page );
+
+	foreach ( (array) $post_query->posts as $post ) {
+		$invoice_data_to_export = array();
+
+		$invoice_number = get_post_meta( $post->ID, 'invoice_number', true );
+		$invoice_metas  = get_post_meta( $post->ID, 'invoice_metas', true );
+
+		foreach ( $invoice_metas as $key => $value ) {
+
+			switch ( $key ) {
+				case 'email':
+					$label = __( 'Email', 'invoices-camptix' );
+					break;
+
+				case 'name':
+					$label = __( 'Name', 'invoices-camptix' );
+					break;
+
+				case 'address':
+					$label = __( 'Address', 'invoices-camptix' );
+					break;
+
+				case 'vat-number':
+					$label = __( 'VAT Number', 'invoices-camptix' );
+					break;
+
+				default:
+					continue;
+			}
+
+			if ( ! empty( $value ) ) {
+				$invoice_data_to_export[] = array(
+					'name'  => $label,
+					'value' => $value,
+				);
+			}
+		}
+
+		if ( ! empty( $invoice_number ) ) {
+			$invoice_data_to_export[] = array(
+				'name'  => __( 'Invoice Number', 'invoices-camptix' ),
+				'value' => $invoice_number,
+			);
+		}
+
+		if ( ! empty( $invoice_data_to_export ) ) {
+			$data_to_export[] = array(
+				'group_id'    => 'camptix-invoice',
+				'group_label' => __( 'CampTix Invoice Data', 'invoices-camptix' ),
+				'item_id'     => "camptix-invoice-{$post->ID}",
+				'data'        => $invoice_data_to_export,
+			);
+		}
+	}
+
+	$done = $post_query->max_num_pages <= $page;
+
+	return array(
+		'data' => $data_to_export,
+		'done' => $done,
+	);
+}
+
+/**
+ * Get the list of invoice posts related to a particular email address.
+ *
+ * @param string $email_address
+ * @param int    $page
+ *
+ * @return WP_Query
+ */
+function get_invoice_posts( $email_address, $page ) {
+	$number = 20;
+
+	return new WP_Query(
+		array(
+			'posts_per_page' => $number,
+			'paged'          => $page,
+			'post_type'      => 'tix_invoice',
+			'post_status'    => 'any',
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+			'meta_key'       => 'invoice_metas',
+			'meta_compare'   => 'LIKE',
+			'meta_value'     => $email_address,
+		)
+	);
+}
+
+/**
+ * Registers the personal data eraser for invoices.
+ *
+ * @param array $erasers
+ *
+ * @return array
+ */
+function ctx_register_invoice_data_erasers( $erasers ) {
+	$erasers['camptix-invoice'] = array(
+		'eraser_friendly_name' => __( 'CampTix Invoice Data', 'camptix' ),
+		'callback'             => 'ctx_invoice_data_eraser',
+	);
+
+	return $erasers;
+}
+add_filter( 'wp_privacy_personal_data_erasers', 'ctx_register_invoice_data_eraser' );
+
+/**
+ * Finds and erases personal data associated with an email address from the invoices list.
+ *
+ * @param string $email_address
+ * @param int    $page
+ *
+ * @return array
+ */
+function ctx_invoice_data_eraser( $email_address, $page ) {
+
+	$page           = (int) $page;
+	$items_removed  = false;
+	$items_retained = false;
+	$messages       = array();
+
+	//TODO complete this part.
+
+	return array(
+		'items_removed'  => $items_removed,
+		'items_retained' => $items_retained,
+		'messages'       => $messages,
+		'done'           => $done,
+	);
+}
