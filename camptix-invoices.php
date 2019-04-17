@@ -485,37 +485,19 @@ function ctx_remove_invoice_document_in_draft( $invoice_id ) {
 add_action( 'save_post', 'ctx_remove_invoice_document_in_draft' );
 
 /**
- * Register REST API endpoint to serve invoice details form
- */
-function ctx_register_form_route() {
-	$opt = get_option( 'camptix_options' );
-	if ( ! empty( $opt['invoice-active'] ) ) {
-		register_rest_route(
-			'camptix-invoices/v1',
-			'/invoice-form',
-			array(
-				'methods'  => 'GET',
-				'callback' => 'ctx_invoice_form',
-			)
-		);
-	}//end if
-}
-add_action( 'rest_api_init', 'ctx_register_form_route' );
-
-/**
  * Invoice form generator.
  */
-function ctx_invoice_form() {
+function ctx_invoice_form( $order, $options ) {
 
-	$opt                = get_option( 'camptix_options' );
-	$invoice_vat_number = $opt['invoice-vat-number'];
+	if ( empty( $options['invoice-active'] ) ) {
+		return;
+	}
 
-	ob_start();
+	$invoice_vat_number = $options['invoice-vat-number'];
 	include CTX_INV_DIR . '/includes/views/invoice-form.php';
-	$form = ob_get_clean();
 
-	wp_send_json( array( 'form' => $form ) );
 }
+add_action( 'camptix_form_attendee_after_registration_information', 'ctx_invoice_form', 10, 2 );
 
 /**
  * Recovers a path for a PDF invoice.
